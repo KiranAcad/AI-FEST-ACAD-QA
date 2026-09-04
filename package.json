@@ -1,0 +1,38 @@
+{
+  "name": "ai-failure-analysis-copilot",
+  "version": "0.1.0",
+  "description": "AI-powered root cause analysis for failed Playwright tests — POC",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "ai-failure-analysis": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "analyze": "tsx src/index.ts analyze",
+    "analyze:ollama": "tsx src/index.ts analyze --input ./real-tests/test-results/results.json --output ./output/real-test-report --provider ollama --model qwen3:8b",
+    "analyze:sample": "tsx src/index.ts analyze --input ./fixtures/sample-playwright-results.json --output ./output/sample-report --dry-run",
+    "analyze:real": "tsx src/index.ts analyze --input ./real-tests/test-results/results.json --output ./output/real-test-report --dry-run",
+    "test:real": "npm --prefix real-tests test",
+    "test:and:analyze:ollama": "npm run test:real || npm run analyze:ollama",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "dotenv": "^16.5.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

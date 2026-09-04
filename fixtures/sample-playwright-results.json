@@ -1,0 +1,609 @@
+{
+  "config": {
+    "configFile": "playwright.config.ts",
+    "rootDir": "/home/runner/work/webapp/webapp",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "totalTime": 142580
+    },
+    "projects": [
+      {
+        "name": "chromium",
+        "testDir": "/home/runner/work/webapp/webapp/tests"
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "version": "1.48.0",
+    "workers": 4
+  },
+  "suites": [
+    {
+      "title": "chromium",
+      "suites": [
+        {
+          "title": "tests/auth/login.spec.ts",
+          "file": "tests/auth/login.spec.ts",
+          "suites": [
+            {
+              "title": "Login Page",
+              "specs": [
+                {
+                  "title": "should submit valid credentials and redirect to dashboard",
+                  "ok": false,
+                  "tests": [
+                    {
+                      "title": "should submit valid credentials and redirect to dashboard",
+                      "ok": false,
+                      "status": "unexpected",
+                      "expectedStatus": "passed",
+                      "results": [
+                        {
+                          "status": "failed",
+                          "duration": 8540,
+                          "retry": 0,
+                          "errors": [
+                            {
+                              "message": "Error: locator.click: Error: strict mode violation: locator('#login-btn') resolved to 0 elements\n\n=========================== logs ===========================\nwaiting for locator('#login-btn')\n============================================================",
+                              "stack": "Error: locator.click: Error: strict mode violation: locator('#login-btn') resolved to 0 elements\n\n=========================== logs ===========================\nwaiting for locator('#login-btn')\n============================================================\n    at LoginPage.submitLogin (/home/runner/work/webapp/webapp/tests/pages/LoginPage.ts:34:28)\n    at /home/runner/work/webapp/webapp/tests/auth/login.spec.ts:18:5\n    at node_modules/@playwright/test/lib/worker/workerMain.js:292:7\n    at TestInfo._runAsStep (node_modules/@playwright/test/lib/worker/testInfo.js:224:22)\n    at node:internal/process/task_queues:95:5"
+                            }
+                          ],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "test-results/auth-login-Login-Page-should-submit-valid-credentials/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "test-results/auth-login-Login-Page-should-submit-valid-credentials/video.webm"
+                            }
+                          ],
+                          "stdout": [
+                            "[2026-09-02T14:23:11.445Z] INFO: Navigating to login page\n",
+                            "[2026-09-02T14:23:12.102Z] INFO: Login page loaded successfully\n",
+                            "[2026-09-02T14:23:12.340Z] INFO: Entering username: testuser@example.com\n",
+                            "[2026-09-02T14:23:12.567Z] INFO: Entering password: ****\n",
+                            "[2026-09-02T14:23:12.789Z] INFO: Clicking login button with selector '#login-btn'\n",
+                            "[2026-09-02T14:23:13.010Z] ERROR: Failed to find element: #login-btn\n",
+                            "[2026-09-02T14:23:13.011Z] DEBUG: Page HTML snapshot shows button now has class 'login-button' and data-testid='login-submit'\n"
+                          ],
+                          "stderr": []
+                        }
+                      ]
+                    }
+                  ],
+                  "file": "tests/auth/login.spec.ts",
+                  "line": 12,
+                  "column": 5
+                },
+                {
+                  "title": "should display validation error for empty password",
+                  "ok": true,
+                  "tests": [
+                    {
+                      "title": "should display validation error for empty password",
+                      "ok": true,
+                      "status": "expected",
+                      "expectedStatus": "passed",
+                      "results": [
+                        {
+                          "status": "passed",
+                          "duration": 3200,
+                          "retry": 0,
+                          "errors": [],
+                          "attachments": [],
+                          "stdout": [],
+                          "stderr": []
+                        }
+                      ]
+                    }
+                  ],
+                  "file": "tests/auth/login.spec.ts",
+                  "line": 28,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "tests/search/search-results.spec.ts",
+          "file": "tests/search/search-results.spec.ts",
+          "suites": [
+            {
+              "title": "Search Results",
+              "specs": [
+                {
+                  "title": "should display search results after query submission",
+                  "ok": false,
+                  "tests": [
+                    {
+                      "title": "should display search results after query submission",
+                      "ok": false,
+                      "status": "unexpected",
+                      "expectedStatus": "passed",
+                      "results": [
+                        {
+                          "status": "failed",
+                          "duration": 12300,
+                          "retry": 0,
+                          "errors": [
+                            {
+                              "message": "Error: expect(locator).toBeVisible()\n\nLocator: getByRole('list', { name: 'Search results' })\nExpected: visible\nReceived: hidden\nCall log:\n  - expect.toBeVisible with timeout 10000ms\n  - waiting for getByRole('list', { name: 'Search results' })\n  -   locator resolved to <ul class=\"search-results-list\" aria-label=\"Search results\" style=\"display: none\">…</ul>\n  -   unexpected value \"hidden\"",
+                              "stack": "Error: expect(locator).toBeVisible()\n\nLocator: getByRole('list', { name: 'Search results' })\nExpected: visible\nReceived: hidden\nCall log:\n  - expect.toBeVisible with timeout 10000ms\n  - waiting for getByRole('list', { name: 'Search results' })\n  -   locator resolved to <ul class=\"search-results-list\" aria-label=\"Search results\" style=\"display: none\">…</ul>\n  -   unexpected value \"hidden\"\n    at /home/runner/work/webapp/webapp/tests/search/search-results.spec.ts:24:42\n    at node_modules/@playwright/test/lib/worker/workerMain.js:292:7\n    at TestInfo._runAsStep (node_modules/@playwright/test/lib/worker/testInfo.js:224:22)\n    at node:internal/process/task_queues:95:5"
+                            }
+                          ],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "test-results/search-Search-Results-should-display/test-failed-1.png"
+                            }
+                          ],
+                          "stdout": [
+                            "[2026-09-02T14:23:30.100Z] INFO: Navigating to search page\n",
+                            "[2026-09-02T14:23:31.200Z] INFO: Search page loaded\n",
+                            "[2026-09-02T14:23:31.500Z] INFO: Entering search query: 'laptop'\n",
+                            "[2026-09-02T14:23:31.800Z] INFO: Clicking search button\n",
+                            "[2026-09-02T14:23:32.100Z] INFO: Waiting for search results to appear\n",
+                            "[2026-09-02T14:23:32.300Z] DEBUG: Search API response received (200 OK, 15 results)\n",
+                            "[2026-09-02T14:23:32.400Z] DEBUG: DOM mutation detected — results list element exists but display:none\n",
+                            "[2026-09-02T14:23:42.100Z] ERROR: Timeout waiting for search results visibility\n"
+                          ],
+                          "stderr": []
+                        }
+                      ]
+                    }
+                  ],
+                  "file": "tests/search/search-results.spec.ts",
+                  "line": 15,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "tests/dashboard/dashboard.spec.ts",
+          "file": "tests/dashboard/dashboard.spec.ts",
+          "suites": [
+            {
+              "title": "Dashboard",
+              "specs": [
+                {
+                  "title": "should load dashboard widgets within 5 seconds",
+                  "ok": false,
+                  "tests": [
+                    {
+                      "title": "should load dashboard widgets within 5 seconds",
+                      "ok": false,
+                      "status": "unexpected",
+                      "expectedStatus": "passed",
+                      "results": [
+                        {
+                          "status": "timedOut",
+                          "duration": 30000,
+                          "retry": 0,
+                          "errors": [
+                            {
+                              "message": "Test timeout of 30000ms exceeded.\n\nError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid=\"dashboard-widgets-container\"]') to be visible",
+                              "stack": "Test timeout of 30000ms exceeded.\n\nError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid=\"dashboard-widgets-container\"]') to be visible\n    at DashboardPage.waitForWidgets (/home/runner/work/webapp/webapp/tests/pages/DashboardPage.ts:42:18)\n    at /home/runner/work/webapp/webapp/tests/dashboard/dashboard.spec.ts:15:5\n    at node_modules/@playwright/test/lib/worker/workerMain.js:292:7\n    at TestInfo._runAsStep (node_modules/@playwright/test/lib/worker/testInfo.js:224:22)"
+                            }
+                          ],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "test-results/dashboard-Dashboard-should-load/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "test-results/dashboard-Dashboard-should-load/video.webm"
+                            }
+                          ],
+                          "stdout": [
+                            "[2026-09-02T14:24:01.000Z] INFO: Navigating to dashboard\n",
+                            "[2026-09-02T14:24:02.150Z] INFO: Dashboard page HTML loaded\n",
+                            "[2026-09-02T14:24:02.300Z] INFO: Waiting for dashboard widgets to render\n",
+                            "[2026-09-02T14:24:05.500Z] WARN: Widgets API call still pending after 3s\n",
+                            "[2026-09-02T14:24:10.500Z] WARN: Widgets API call still pending after 8s\n",
+                            "[2026-09-02T14:24:20.500Z] WARN: Widgets API call still pending after 18s — possible backend slowness\n",
+                            "[2026-09-02T14:24:30.100Z] ERROR: waitFor timeout exceeded for dashboard-widgets-container\n",
+                            "[2026-09-02T14:24:30.101Z] DEBUG: Network tab shows GET /api/v2/widgets returned 200 after 28.5s (expected <2s)\n"
+                          ],
+                          "stderr": []
+                        },
+                        {
+                          "status": "timedOut",
+                          "duration": 30000,
+                          "retry": 1,
+                          "errors": [
+                            {
+                              "message": "Test timeout of 30000ms exceeded.\n\nError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid=\"dashboard-widgets-container\"]') to be visible",
+                              "stack": "Test timeout of 30000ms exceeded.\n\nError: locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid=\"dashboard-widgets-container\"]') to be visible\n    at DashboardPage.waitForWidgets (/home/runner/work/webapp/webapp/tests/pages/DashboardPage.ts:42:18)\n    at /home/runner/work/webapp/webapp/tests/dashboard/dashboard.spec.ts:15:5"
+                            }
+                          ],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "test-results/dashboard-Dashboard-should-load/test-failed-2.png"
+                            }
+                          ],
+                          "stdout": [
+                            "[2026-09-02T14:25:01.000Z] INFO: Navigating to dashboard (retry 1)\n",
+                            "[2026-09-02T14:25:02.100Z] INFO: Dashboard page HTML loaded\n",
+                            "[2026-09-02T14:25:32.100Z] ERROR: waitFor timeout exceeded again on retry\n"
+                          ],
+                          "stderr": []
+                        }
+                      ]
+                    }
+                  ],
+                  "file": "tests/dashboard/dashboard.spec.ts",
+                  "line": 10,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "tests/modals/confirmation-dialog.spec.ts",
+          "file": "tests/modals/confirmation-dialog.spec.ts",
+          "suites": [
+            {
+              "title": "Confirmation Dialog",
+              "specs": [
+                {
+                  "title": "should close modal and update item status after confirmation",
+                  "ok": false,
+                  "tests": [
+                    {
+                      "title": "should close modal and update item status after confirmation",
+                      "ok": false,
+                      "status": "flaky",
+                      "expectedStatus": "passed",
+                      "results": [
+                        {
+                          "status": "failed",
+                          "duration": 6200,
+                          "retry": 0,
+                          "errors": [
+                            {
+                              "message": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"Archived\"\nReceived: \"Active\"",
+                              "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"Archived\"\nReceived: \"Active\"\n    at /home/runner/work/webapp/webapp/tests/modals/confirmation-dialog.spec.ts:38:47\n    at node_modules/@playwright/test/lib/worker/workerMain.js:292:7\n    at TestInfo._runAsStep (node_modules/@playwright/test/lib/worker/testInfo.js:224:22)"
+                            }
+                          ],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "test-results/modals-Confirmation-Dialog-should-close/test-failed-1.png"
+                            }
+                          ],
+                          "stdout": [
+                            "[2026-09-02T14:24:40.000Z] INFO: Opening item details page\n",
+                            "[2026-09-02T14:24:41.100Z] INFO: Clicking 'Archive' button\n",
+                            "[2026-09-02T14:24:41.400Z] INFO: Confirmation dialog appeared\n",
+                            "[2026-09-02T14:24:41.500Z] INFO: Clicking 'Confirm' button in dialog\n",
+                            "[2026-09-02T14:24:41.600Z] DEBUG: Modal close animation started (300ms transition)\n",
+                            "[2026-09-02T14:24:41.650Z] INFO: Checking item status text\n",
+                            "[2026-09-02T14:24:41.700Z] ERROR: Status still shows 'Active', expected 'Archived'\n",
+                            "[2026-09-02T14:24:41.701Z] DEBUG: Status element was read before modal close animation completed and API call resolved\n"
+                          ],
+                          "stderr": []
+                        },
+                        {
+                          "status": "passed",
+                          "duration": 6800,
+                          "retry": 1,
+                          "errors": [],
+                          "attachments": [],
+                          "stdout": [
+                            "[2026-09-02T14:25:40.000Z] INFO: Opening item details page\n",
+                            "[2026-09-02T14:25:41.100Z] INFO: Clicking 'Archive' button\n",
+                            "[2026-09-02T14:25:41.800Z] INFO: Clicking 'Confirm' button in dialog\n",
+                            "[2026-09-02T14:25:42.500Z] INFO: Status shows 'Archived' — PASS\n"
+                          ],
+                          "stderr": []
+                        }
+                      ]
+                    }
+                  ],
+                  "file": "tests/modals/confirmation-dialog.spec.ts",
+                  "line": 20,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "tests/checkout/checkout-flow.spec.ts",
+          "file": "tests/checkout/checkout-flow.spec.ts",
+          "suites": [
+            {
+              "title": "Checkout Flow",
+              "specs": [
+                {
+                  "title": "should apply coupon code and show discounted total",
+                  "ok": false,
+                  "tests": [
+                    {
+                      "title": "should apply coupon code and show discounted total",
+                      "ok": false,
+                      "status": "unexpected",
+                      "expectedStatus": "passed",
+                      "results": [
+                        {
+                          "status": "failed",
+                          "duration": 5400,
+                          "retry": 0,
+                          "errors": [
+                            {
+                              "message": "Error: expect(received).toContain(expected)\n\nExpected substring: \"Discount applied: -$10.00\"\nReceived string: \"Error: Coupon code 'SUMMER2025' has expired. This coupon was valid until 2025-08-31.\"",
+                              "stack": "Error: expect(received).toContain(expected)\n\nExpected substring: \"Discount applied: -$10.00\"\nReceived string: \"Error: Coupon code 'SUMMER2025' has expired. This coupon was valid until 2025-08-31.\"\n    at /home/runner/work/webapp/webapp/tests/checkout/checkout-flow.spec.ts:45:52\n    at node_modules/@playwright/test/lib/worker/workerMain.js:292:7\n    at TestInfo._runAsStep (node_modules/@playwright/test/lib/worker/testInfo.js:224:22)"
+                            }
+                          ],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "test-results/checkout-Checkout-Flow-should-apply-coupon/test-failed-1.png"
+                            }
+                          ],
+                          "stdout": [
+                            "[2026-09-02T14:25:00.000Z] INFO: Adding item 'Wireless Headphones' to cart\n",
+                            "[2026-09-02T14:25:01.200Z] INFO: Navigating to checkout page\n",
+                            "[2026-09-02T14:25:02.000Z] INFO: Checkout page loaded with 1 item, subtotal: $99.99\n",
+                            "[2026-09-02T14:25:02.200Z] INFO: Entering coupon code: SUMMER2025\n",
+                            "[2026-09-02T14:25:02.500Z] INFO: Clicking 'Apply Coupon' button\n",
+                            "[2026-09-02T14:25:03.100Z] WARN: Coupon API returned 400: {\"error\": \"COUPON_EXPIRED\", \"message\": \"Coupon code 'SUMMER2025' has expired\", \"validUntil\": \"2025-08-31\"}\n",
+                            "[2026-09-02T14:25:03.200Z] ERROR: Expected discount message not found — coupon error displayed instead\n"
+                          ],
+                          "stderr": []
+                        }
+                      ]
+                    }
+                  ],
+                  "file": "tests/checkout/checkout-flow.spec.ts",
+                  "line": 35,
+                  "column": 5
+                },
+                {
+                  "title": "should complete purchase with valid payment",
+                  "ok": true,
+                  "tests": [
+                    {
+                      "title": "should complete purchase with valid payment",
+                      "ok": true,
+                      "status": "expected",
+                      "expectedStatus": "passed",
+                      "results": [
+                        {
+                          "status": "passed",
+                          "duration": 8200,
+                          "retry": 0,
+                          "errors": [],
+                          "attachments": [],
+                          "stdout": [],
+                          "stderr": []
+                        }
+                      ]
+                    }
+                  ],
+                  "file": "tests/checkout/checkout-flow.spec.ts",
+                  "line": 55,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "tests/api/health-check.spec.ts",
+          "file": "tests/api/health-check.spec.ts",
+          "suites": [
+            {
+              "title": "API Health Check",
+              "specs": [
+                {
+                  "title": "should receive 200 from inventory service before running inventory tests",
+                  "ok": false,
+                  "tests": [
+                    {
+                      "title": "should receive 200 from inventory service before running inventory tests",
+                      "ok": false,
+                      "status": "unexpected",
+                      "expectedStatus": "passed",
+                      "results": [
+                        {
+                          "status": "failed",
+                          "duration": 15200,
+                          "retry": 0,
+                          "errors": [
+                            {
+                              "message": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 200\nReceived: 503",
+                              "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 200\nReceived: 503\n    at /home/runner/work/webapp/webapp/tests/api/health-check.spec.ts:12:45\n    at node_modules/@playwright/test/lib/worker/workerMain.js:292:7\n    at TestInfo._runAsStep (node_modules/@playwright/test/lib/worker/testInfo.js:224:22)"
+                            }
+                          ],
+                          "attachments": [],
+                          "stdout": [
+                            "[2026-09-02T14:25:30.000Z] INFO: Sending health check to https://api.staging.example.com/inventory/health\n",
+                            "[2026-09-02T14:25:30.500Z] WARN: Health check attempt 1 failed: 503 Service Unavailable\n",
+                            "[2026-09-02T14:25:33.500Z] WARN: Health check attempt 2 failed: 503 Service Unavailable\n",
+                            "[2026-09-02T14:25:36.500Z] WARN: Health check attempt 3 failed: 503 Service Unavailable\n",
+                            "[2026-09-02T14:25:39.500Z] ERROR: All 3 health check attempts failed\n",
+                            "[2026-09-02T14:25:39.501Z] DEBUG: Response body: {\"status\": \"unhealthy\", \"dependencies\": {\"database\": \"connected\", \"cache\": \"connected\", \"message-queue\": \"disconnected\"}, \"message\": \"RabbitMQ connection refused: ECONNREFUSED 10.0.1.42:5672\"}\n",
+                            "[2026-09-02T14:25:39.502Z] ERROR: Inventory service is down — message queue (RabbitMQ) appears unavailable\n"
+                          ],
+                          "stderr": [
+                            "[2026-09-02T14:25:39.503Z] STDERR: FetchError: request to https://api.staging.example.com/inventory/health failed, reason: connect ECONNREFUSED 10.0.1.42:5672\n"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "file": "tests/api/health-check.spec.ts",
+                  "line": 5,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "tests/cart/cart-calculations.spec.ts",
+          "file": "tests/cart/cart-calculations.spec.ts",
+          "suites": [
+            {
+              "title": "Cart Calculations",
+              "specs": [
+                {
+                  "title": "should correctly calculate cart total with tax for multi-item order",
+                  "ok": false,
+                  "tests": [
+                    {
+                      "title": "should correctly calculate cart total with tax for multi-item order",
+                      "ok": false,
+                      "status": "unexpected",
+                      "expectedStatus": "passed",
+                      "results": [
+                        {
+                          "status": "failed",
+                          "duration": 7800,
+                          "retry": 0,
+                          "errors": [
+                            {
+                              "message": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"$109.98\"\nReceived: \"$99.98\"",
+                              "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"$109.98\"\nReceived: \"$99.98\"\n    at /home/runner/work/webapp/webapp/tests/cart/cart-calculations.spec.ts:32:49\n    at node_modules/@playwright/test/lib/worker/workerMain.js:292:7\n    at TestInfo._runAsStep (node_modules/@playwright/test/lib/worker/testInfo.js:224:22)"
+                            }
+                          ],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "test-results/cart-Cart-Calculations-should-correctly/test-failed-1.png"
+                            }
+                          ],
+                          "stdout": [
+                            "[2026-09-02T14:26:00.000Z] INFO: Adding item 'Running Shoes' ($59.99) to cart\n",
+                            "[2026-09-02T14:26:01.000Z] INFO: Adding item 'Sports Socks' ($9.99) to cart\n",
+                            "[2026-09-02T14:26:01.500Z] INFO: Adding item 'Water Bottle' ($19.99) to cart\n",
+                            "[2026-09-02T14:26:02.000Z] INFO: Viewing cart — 3 items\n",
+                            "[2026-09-02T14:26:02.200Z] INFO: Subtotal displayed: $89.97\n",
+                            "[2026-09-02T14:26:02.300Z] INFO: Tax (10%): expected $9.00, displayed: $10.01\n",
+                            "[2026-09-02T14:26:02.400Z] INFO: Total displayed: $99.98\n",
+                            "[2026-09-02T14:26:02.500Z] ERROR: Expected total $109.98 but UI shows $99.98\n",
+                            "[2026-09-02T14:26:02.501Z] DEBUG: Looks like tax calculation is applying 10% only to first item instead of entire subtotal. Subtotal ($89.97) + tax on first item only ($59.99 * 10% = $6.00 ≈ $5.99 rounding) + remaining = $99.98? Possible app bug in tax calculation logic.\n"
+                          ],
+                          "stderr": []
+                        }
+                      ]
+                    }
+                  ],
+                  "file": "tests/cart/cart-calculations.spec.ts",
+                  "line": 18,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "tests/products/product-pricing.spec.ts",
+          "file": "tests/products/product-pricing.spec.ts",
+          "suites": [
+            {
+              "title": "Product Pricing Display",
+              "specs": [
+                {
+                  "title": "should show current sale price on product detail page",
+                  "ok": false,
+                  "tests": [
+                    {
+                      "title": "should show current sale price on product detail page",
+                      "ok": false,
+                      "status": "unexpected",
+                      "expectedStatus": "passed",
+                      "results": [
+                        {
+                          "status": "failed",
+                          "duration": 4300,
+                          "retry": 0,
+                          "errors": [
+                            {
+                              "message": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"$79.99\"\nReceived: \"$129.99\"",
+                              "stack": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"$79.99\"\nReceived: \"$129.99\"\n    at /home/runner/work/webapp/webapp/tests/products/product-pricing.spec.ts:28:55\n    at node_modules/@playwright/test/lib/worker/workerMain.js:292:7\n    at TestInfo._runAsStep (node_modules/@playwright/test/lib/worker/testInfo.js:224:22)"
+                            }
+                          ],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "test-results/products-Product-Pricing-should-show/test-failed-1.png"
+                            }
+                          ],
+                          "stdout": [
+                            "[2026-09-02T14:26:30.000Z] INFO: Navigating to product page for 'Premium Bluetooth Speaker'\n",
+                            "[2026-09-02T14:26:31.200Z] INFO: Product page loaded\n",
+                            "[2026-09-02T14:26:31.400Z] INFO: Checking sale price element\n",
+                            "[2026-09-02T14:26:31.500Z] DEBUG: Found element '.price-old' with text '$129.99'\n",
+                            "[2026-09-02T14:26:31.501Z] DEBUG: Found element '.price-current' with text '$79.99'\n",
+                            "[2026-09-02T14:26:31.600Z] INFO: Test assertion: expect(page.locator('.price-old').textContent()).toBe('$79.99')\n",
+                            "[2026-09-02T14:26:31.700Z] ERROR: Assertion failed — got '$129.99' instead of '$79.99'\n",
+                            "[2026-09-02T14:26:31.701Z] DEBUG: BUG IN TEST: Test is asserting on '.price-old' (original price) instead of '.price-current' (sale price). The selector in the test code is wrong.\n"
+                          ],
+                          "stderr": []
+                        }
+                      ]
+                    }
+                  ],
+                  "file": "tests/products/product-pricing.spec.ts",
+                  "line": 18,
+                  "column": 5
+                },
+                {
+                  "title": "should show 'Out of Stock' badge when inventory is zero",
+                  "ok": true,
+                  "tests": [
+                    {
+                      "title": "should show 'Out of Stock' badge when inventory is zero",
+                      "ok": true,
+                      "status": "expected",
+                      "expectedStatus": "passed",
+                      "results": [
+                        {
+                          "status": "passed",
+                          "duration": 3100,
+                          "retry": 0,
+                          "errors": [],
+                          "attachments": [],
+                          "stdout": [],
+                          "stderr": []
+                        }
+                      ]
+                    }
+                  ],
+                  "file": "tests/products/product-pricing.spec.ts",
+                  "line": 35,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

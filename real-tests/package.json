@@ -1,0 +1,21 @@
+{
+  "name": "real-tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "analyze": "npx tsx ../src/index.ts analyze --input ./test-results/results.json --output ../output/real-test-report --dry-run",
+    "analyze:ollama": "npx tsx ../src/index.ts analyze --input ./test-results/results.json --output ../output/ollama-report --provider ollama --model qwen3:8b",
+    "test:and:analyze": "playwright test || npx tsx ../src/index.ts analyze --input ./test-results/results.json --output ../output/real-test-report --dry-run",
+    "test:and:analyze:ollama": "playwright test || npx tsx ../src/index.ts analyze --input ./test-results/results.json --output ../output/ollama-report --provider ollama --model qwen3:8b"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}
