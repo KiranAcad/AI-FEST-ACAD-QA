@@ -5,14 +5,16 @@
  * Allure result files can be added as additional parsers later.
  */
 
-import { existsSync } from 'node:fs';
+import { statSync, existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { ParsedFailure } from '../types.js';
 import { parsePlaywrightResults } from './playwright-parser.js';
+import { parseAllureResultsDir } from './allure-parser.js';
 
 export { parsePlaywrightResults } from './playwright-parser.js';
+export { parseAllureResultsDir } from './allure-parser.js';
 
-export type InputFormat = 'playwright-json';
+export type InputFormat = 'playwright-json' | 'allure-results';
 
 /**
  * Auto-detect input format and parse test results.
@@ -29,7 +31,15 @@ export async function parseTestResults(inputPath: string): Promise<{
     throw new Error(`Input path does not exist: ${inputPath}`);
   }
 
-  // Try to detect format from file contents
+  const stat = statSync(inputPath);
+
+  // If inputPath is a directory, check if it's an allure-results directory
+  if (stat.isDirectory()) {
+    const result = parseAllureResultsDir(inputPath);
+    return { ...result, format: 'allure-results' };
+  }
+
+  // Otherwise try to detect format from file contents
   const raw = await readFile(inputPath, 'utf-8');
   const data = JSON.parse(raw);
 
@@ -43,7 +53,6 @@ export async function parseTestResults(inputPath: string): Promise<{
     `Could not detect input format for: ${inputPath}\n` +
       'Currently supported formats:\n' +
       '  - Playwright JSON reporter output (--reporter=json)\n' +
-      '\n' +
-      'Ensure the file is a valid Playwright JSON report with top-level "suites" and "config" fields.'
+      '  - Allure Results directory (allure-results/)\n'
   );
 }

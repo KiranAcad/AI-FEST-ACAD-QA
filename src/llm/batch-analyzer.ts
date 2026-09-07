@@ -14,9 +14,15 @@ import {
 } from '../types.js';
 import { createAnalyzer, AnalyzerConfig } from './analyzer.js';
 
+import { generateCodeFix } from '../autofix/diff-generator.js';
+import { recordTestResult, getFlakyTestMetrics } from '../db/history.js';
+import { analyzeScreenshot } from './vision-analyzer.js';
+
 export interface BatchAnalyzerConfig extends AnalyzerConfig {
   /** If true, use mock analyzer instead of real Claude API */
   dryRun?: boolean;
+  /** Perform vision analysis on screenshots */
+  vision?: boolean;
 }
 
 /**
@@ -44,7 +50,15 @@ export async function analyzeBatch(
           chalk.dim(' → ') +
           chalk.yellow('mock analysis')
       );
-      analyses.push(createMockAnalysis(failure));
+      const mockAnalysis = createMockAnalysis(failure);
+
+      // Generate code fix patch
+      mockAnalysis.codeFix = generateCodeFix(failure, mockAnalysis.suggestedAction);
+
+      // Record in SQLite DB
+      recordTestResult(failure, mockAnalysis);
+
+      analyses.push(mockAnalysis);
     }
   } else {
     const analyzer = createAnalyzer(config);
@@ -60,6 +74,17 @@ export async function analyzeBatch(
         process.stdout.write(prefix + chalk.white(truncate(failure.testName, 60)) + chalk.dim(' → '));
 
         const { analysis, tokenUsage } = await analyzer.analyzeFailure(failure);
+
+        // Optional vision analysis if screenshot present
+        if (config.vision && failure.screenshotPath) {
+          analysis.visualAnalysis = await analyzeScreenshot(failure, config.provider || 'ollama', config.ollamaUrl, config.model);
+        }
+
+        // Generate code fix patch
+        analysis.codeFix = generateCodeFix(failure, analysis.suggestedAction);
+
+        // Record in SQLite DB
+        recordTestResult(failure, analysis);
 
         // Color code by confidence
         const confColor =
@@ -82,17 +107,23 @@ export async function analyzeBatch(
         console.error(chalk.red(`    ${error instanceof Error ? error.message : String(error)}`));
 
         // Push a fallback analysis so the report still includes this test
-        analyses.push({
+        const fallback: FailureAnalysis = {
           testName: failure.testName,
           category: 'Unknown/Needs Manual Review',
           confidence: 'Low',
           explanation: `Analysis failed: ${error instanceof Error ? error.message : String(error)}`,
           suggestedAction: 'Manually review the test failure logs and stack trace.',
           relevantLogExcerpt: failure.errorMessage.slice(0, 200),
-        });
+        };
+        fallback.codeFix = generateCodeFix(failure, fallback.suggestedAction);
+        recordTestResult(failure, fallback);
+        analyses.push(fallback);
       }
     }
   }
+
+  // Get flaky test history from SQLite DB
+  const flakyMetrics = getFlakyTestMetrics();
 
   return {
     timestamp: new Date().toISOString(),
@@ -100,6 +131,7 @@ export async function analyzeBatch(
     totalTests,
     totalFailures: failures.length,
     analyses,
+    flakyMetrics,
     tokenUsage: aggregateUsage,
   };
 }

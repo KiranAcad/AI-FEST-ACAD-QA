@@ -1,0 +1,58 @@
+name: AI Failure Analysis & Playwright Test Pipeline
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test-and-triage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+          npm --prefix real-tests ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright Test Suite
+        id: playwright
+        continue-on-error: true
+        run: npm run test:real
+
+      - name: Setup Local Ollama AI Model
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve &
+          sleep 5
+          ollama pull qwen3:8b
+
+      - name: Run AI Failure Analysis Copilot
+        run: |
+          npm run analyze:ollama || true
+
+      - name: Upload AI Triage Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-failure-triage-report
+          path: output/
+
+      - name: Add AI Triage to Job Summary
+        if: always()
+        run: |
+          if [ -f output/real-test-report.md ]; then
+            cat output/real-test-report.md >> $GITHUB_STEP_SUMMARY
+          fi

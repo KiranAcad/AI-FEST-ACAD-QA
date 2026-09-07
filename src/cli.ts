@@ -15,6 +15,9 @@ import { parseTestResults } from './parsers/index.js';
 import { analyzeBatch } from './llm/batch-analyzer.js';
 import { generateMarkdownReport } from './report/markdown-report.js';
 import { generateHtmlReport } from './report/html-report.js';
+import { injectAllureAttachments } from './report/allure-injector.js';
+import { applyCodeFix } from './autofix/diff-generator.js';
+import { startDashboardServer } from './server/app.js';
 import { AnalysisReport, RootCauseCategory } from './types.js';
 
 // Load environment variables
@@ -30,13 +33,17 @@ program
 program
   .command('analyze')
   .description('Analyze failed test results and generate a root cause report')
-  .option('-i, --input <path>', 'Path to Playwright JSON results file')
+  .option('-i, --input <path>', 'Path to Playwright JSON results file or allure-results directory')
   .option('-o, --output <path>', 'Output path for the report (without extension)', './output/report')
   .option('-p, --provider <provider>', 'LLM provider: anthropic or ollama', process.env.LLM_PROVIDER || 'anthropic')
   .option('-f, --format <format>', 'Report format: md, html, or both', 'both')
   .option('-m, --model <model>', 'Model name to use (e.g. claude-sonnet-4-20250514 or qwen3:8b)')
   .option('--ollama-url <url>', 'Base URL for Ollama', process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434')
   .option('--dry-run', 'Use mock analysis instead of LLM (no API/server needed)', false)
+  .option('--allure-dir <path>', 'Path to allure-results directory to inject AI attachments into')
+  .option('--apply-fix', 'Automatically apply proposed AI code fixes directly to spec files on disk', false)
+  .option('--vision', 'Perform visual screenshot analysis using Vision LLM', false)
+  .option('--server', 'Start live interactive Web UI Dashboard on port 3000', false)
   .action(async (options) => {
     try {
       await runAnalysis(options);
@@ -54,6 +61,10 @@ async function runAnalysis(options: {
   model?: string;
   ollamaUrl?: string;
   dryRun?: boolean;
+  allureDir?: string;
+  applyFix?: boolean;
+  vision?: boolean;
+  server?: boolean;
 }) {
   // ─── Resolve input file path ───────────────────────────────────────
   let resolvedInput = options.input;
@@ -163,8 +174,30 @@ async function runAnalysis(options: {
     console.log(chalk.green(`  ✓ HTML report: ${htmlPath}`));
   }
 
+  // ─── Step 4: Optional Allure Attachment Injection ─────────────────
+  if (options.allureDir && existsSync(resolve(options.allureDir))) {
+    const injected = injectAllureAttachments(resolve(options.allureDir), report);
+    console.log(chalk.green(`  ✓ Injected AI Triage attachments into ${injected} Allure result file(s)`));
+  }
+
+  // ─── Step 5: Optional Apply Code Fixes ─────────────────────────────
+  if (options.applyFix) {
+    let appliedCount = 0;
+    for (const a of report.analyses) {
+      if (a.codeFix && applyCodeFix(a.codeFix)) {
+        appliedCount++;
+      }
+    }
+    console.log(chalk.green(`  ⚡ Applied AI code fix patches to ${appliedCount} test spec file(s) on disk`));
+  }
+
   // ─── Console Summary ──────────────────────────────────────────────
   printConsoleSummary(report);
+
+  // ─── Optional Dashboard Server ───────────────────────────────────
+  if (options.server) {
+    startDashboardServer(3000, report);
+  }
 }
 
 function printConsoleSummary(report: AnalysisReport): void {

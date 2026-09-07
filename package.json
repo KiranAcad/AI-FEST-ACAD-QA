@@ -14,6 +14,8 @@
     "analyze:ollama": "tsx src/index.ts analyze --input ./real-tests/test-results/results.json --output ./output/real-test-report --provider ollama --model qwen3:8b",
     "analyze:sample": "tsx src/index.ts analyze --input ./fixtures/sample-playwright-results.json --output ./output/sample-report --dry-run",
     "analyze:real": "tsx src/index.ts analyze --input ./real-tests/test-results/results.json --output ./output/real-test-report --dry-run",
+    "analyze:fix": "tsx src/index.ts analyze --input ./real-tests/test-results/results.json --output ./output/real-test-report --provider ollama --model qwen3:8b --apply-fix",
+    "dashboard": "tsx src/index.ts analyze --input ./real-tests/test-results/results.json --output ./output/real-test-report --dry-run --server",
     "test:real": "npm --prefix real-tests test",
     "test:and:analyze:ollama": "npm run test:real || npm run analyze:ollama",
     "typecheck": "tsc --noEmit",
@@ -21,12 +23,18 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "better-sqlite3": "^13.0.3",
     "chalk": "^5.4.1",
     "commander": "^13.1.0",
+    "diff": "^9.0.0",
     "dotenv": "^16.5.0",
+    "express": "^5.2.1",
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/diff": "^7.0.2",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.15.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",

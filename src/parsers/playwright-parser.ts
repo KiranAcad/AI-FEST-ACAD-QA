@@ -15,7 +15,7 @@ import { ParsedFailure } from '../types.js';
  * Strip ANSI escape codes from strings.
  * Playwright's JSON reporter embeds color codes in error messages.
  */
-function stripAnsi(str: string): string {
+export function stripAnsi(str: string): string {
   // eslint-disable-next-line no-control-regex
   return str.replace(/\u001b\[[0-9;]*m/g, '').replace(/\x1b\[[0-9;]*m/g, '');
 }
@@ -164,6 +164,13 @@ function extractFailure(
   const screenshotPath = findAttachment(result.attachments, 'screenshot');
   const videoPath = findAttachment(result.attachments, 'video');
 
+  // Extract error location from spec or stack trace
+  const errorLocation = {
+    file: spec.file,
+    line: spec.line || 1,
+    column: spec.column,
+  };
+
   return {
     testName: suiteName ? `${suiteName} > ${spec.title}` : spec.title,
     suiteName: suiteName || 'Root',
@@ -175,6 +182,7 @@ function extractFailure(
     videoPath,
     duration: result.duration,
     retries: test.results.length - 1, // Number of retries (first attempt is not a retry)
+    errorLocation,
   };
 }
 

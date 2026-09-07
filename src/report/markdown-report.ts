@@ -186,6 +186,14 @@ function formatAnalysisDetail(analysis: FailureAnalysis): string {
   lines.push('');
   lines.push(`**Suggested Action:** ${analysis.suggestedAction}`);
   lines.push('');
+  if (analysis.codeFix) {
+    lines.push('**Proposed Code Fix:**');
+    lines.push('');
+    lines.push('```diff');
+    lines.push(analysis.codeFix.unifiedDiff);
+    lines.push('```');
+    lines.push('');
+  }
   lines.push('<details>');
   lines.push('<summary>Relevant Log Excerpt</summary>');
   lines.push('');

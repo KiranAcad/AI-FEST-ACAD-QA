@@ -55,6 +55,25 @@ export interface ParsedFailure {
   duration: number;
   /** Number of retry attempts */
   retries: number;
+  /** Extracted failing line context (file path + line number) */
+  errorLocation?: {
+    file: string;
+    line: number;
+    column?: number;
+    snippet?: string;
+  };
+}
+
+// ─── Code Diff / Auto-Fix ───────────────────────────────────────────────────
+
+export interface CodeFixSuggestion {
+  targetFile: string;
+  startLine: number;
+  endLine: number;
+  originalCode: string;
+  replacementCode: string;
+  unifiedDiff: string;
+  explanation: string;
 }
 
 // ─── LLM Analysis Output ────────────────────────────────────────────────────
@@ -73,6 +92,22 @@ export interface FailureAnalysis {
   suggestedAction: string;
   /** Most relevant excerpt from the logs/stack trace */
   relevantLogExcerpt: string;
+  /** Suggested automated code fix patch, if applicable */
+  codeFix?: CodeFixSuggestion;
+  /** Visual screenshot diagnosis, if visual analysis was performed */
+  visualAnalysis?: string;
+}
+
+// ─── Flaky Test Metrics ─────────────────────────────────────────────────────
+
+export interface FlakyTestMetric {
+  testName: string;
+  totalRuns: number;
+  totalFailures: number;
+  flakinessScore: number; // 0.0 (stable) to 1.0 (highly flaky)
+  lastStatus: 'PASSED' | 'FAILED';
+  lastFailureCategory?: RootCauseCategory;
+  lastRunTimestamp: string;
 }
 
 // ─── Report ─────────────────────────────────────────────────────────────────
@@ -96,6 +131,8 @@ export interface AnalysisReport {
   totalFailures: number;
   /** Per-failure analysis results */
   analyses: FailureAnalysis[];
+  /** Flaky test history insights */
+  flakyMetrics?: FlakyTestMetric[];
   /** Aggregate token usage and cost */
   tokenUsage: TokenUsage;
 }
@@ -114,5 +151,11 @@ export interface AnalyzeOptions {
   model?: string;
   provider?: LLMProvider;
   ollamaUrl?: string;
+  suggestFix?: boolean;
+  applyFix?: boolean;
+  vision?: boolean;
+  allureDir?: string;
+  concurrency?: number;
 }
+
 

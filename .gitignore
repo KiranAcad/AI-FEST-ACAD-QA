@@ -27,3 +27,7 @@ npm-debug.log*
 # Playwright test artifacts (screenshots, videos, traces)
 real-tests/test-results/
 real-tests/playwright-report/
+
+# SQLite history database
+data/
+
