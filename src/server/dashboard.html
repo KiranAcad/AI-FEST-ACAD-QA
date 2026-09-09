@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Failure Analysis Copilot — Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-body: #06080d;
+      --bg-sidebar: #0c0f18;
+      --bg-card: rgba(17, 22, 36, 0.8);
+      --bg-card-hover: rgba(23, 30, 48, 0.9);
+      --bg-input: rgba(15, 19, 30, 0.9);
+      --border: rgba(255,255,255,0.06);
+      --border-active: rgba(99,102,241,0.5);
+      --primary: #6366f1;
+      --primary-soft: rgba(99,102,241,0.15);
+      --primary-text: #a5b4fc;
+      --green: #10b981;
+      --green-soft: rgba(16,185,129,0.12);
+      --red: #ef4444;
+      --red-soft: rgba(239,68,68,0.12);
+      --amber: #f59e0b;
+      --amber-soft: rgba(245,158,11,0.12);
+      --purple: #a855f7;
+      --purple-soft: rgba(168,85,247,0.12);
+      --cyan: #06b6d4;
+      --text: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-dim: #64748b;
+      --radius: 12px;
+      --radius-lg: 16px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-body); color: var(--text); display: flex; }
+
+    /* ── Scrollbar ─────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* ── Sidebar ─────── */
+    .sidebar {
+      width: 260px; min-width: 260px; height: 100vh;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 1.5rem 1rem;
+      z-index: 10;
+    }
+    .sidebar-logo {
+      display: flex; align-items: center; gap: 0.7rem;
+      padding: 0 0.5rem 1.8rem; border-bottom: 1px solid var(--border); margin-bottom: 1.2rem;
+    }
+    .sidebar-logo .logo-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .sidebar-logo h1 { font-size: 0.95rem; font-weight: 700; line-height: 1.3; color: #fff; }
+    .sidebar-logo h1 span { font-size: 0.72rem; font-weight: 400; color: var(--text-dim); display: block; }
+
+    .nav-section { font-size: 0.7rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; padding: 0.8rem 0.5rem 0.5rem; }
+    .nav-item {
+      display: flex; align-items: center; gap: 0.65rem;
+      padding: 0.6rem 0.75rem; border-radius: 8px;
+      font-size: 0.88rem; font-weight: 500; color: var(--text-secondary);
+      cursor: pointer; transition: var(--transition); margin-bottom: 2px;
+      text-decoration: none;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .nav-item.active { background: var(--primary-soft); color: var(--primary-text); font-weight: 600; }
+    .nav-item .nav-icon { font-size: 1rem; width: 1.3rem; text-align: center; }
+    .nav-badge { margin-left: auto; background: var(--red-soft); color: var(--red); font-size: 0.7rem; padding: 0.15rem 0.45rem; border-radius: 6px; font-weight: 700; }
+
+    .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 0.4rem; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* ── Main Content ─────── */
+    .main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2rem; border-bottom: 1px solid var(--border);
+      background: rgba(12,15,24,0.6); backdrop-filter: blur(12px);
+    }
+    .topbar h2 { font-size: 1.3rem; font-weight: 700; }
+    .topbar-actions { display: flex; align-items: center; gap: 0.75rem; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.55rem 1.2rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: var(--transition); border: none; font-family: inherit;
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), #7c3aed); color: #fff; }
+    .btn-primary:hover { box-shadow: 0 4px 16px rgba(99,102,241,0.4); transform: translateY(-1px); }
+    .btn-success { background: linear-gradient(135deg, var(--green), #059669); color: #fff; }
+    .btn-success:hover { box-shadow: 0 4px 16px rgba(16,185,129,0.3); transform: translateY(-1px); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary-text); }
+    .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.78rem; }
+    .btn-danger { background: linear-gradient(135deg, var(--red), #dc2626); color: #fff; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+    .content { flex: 1; overflow-y: auto; padding: 2rem; }
+
+    /* ── Pages ─────── */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── Metric Cards ─────── */
+    .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin-bottom: 2rem; }
+    .metric-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 1.4rem 1.5rem; transition: var(--transition);
+    }
+    .metric-card:hover { border-color: rgba(255,255,255,0.12); }
+    .metric-label { font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 0.5rem; }
+    .metric-val { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+    .metric-sub { font-size: 0.78rem; color: var(--text-dim); margin-top: 0.4rem; }
+
+    /* ── Distribution Chart ─── */
+    .chart-section { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    .chart-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 1.5rem;
+    }
+    .chart-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 1.2rem; }
+    .bar-row { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.7rem; }
+    .bar-label { font-size: 0.8rem; color: var(--text-secondary); width: 180px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-track { flex: 1; height: 22px; background: rgba(255,255,255,0.04); border-radius: 6px; overflow: hidden; position: relative; }
+    .bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; display: flex; align-items: center; padding-left: 0.5rem; }
+    .bar-fill span { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.9); }
+
+    /* ── Failure Cards ─────── */
+    .failures-list { display: flex; flex-direction: column; gap: 1rem; }
+    .failure-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      overflow: hidden; transition: var(--transition);
+    }
+    .failure-card:hover { border-color: rgba(255,255,255,0.1); }
+    .failure-card-header {
+      padding: 1.2rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; user-select: none;
+    }
+    .failure-card-header:hover { background: rgba(255,255,255,0.02); }
+    .fc-left { display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0; }
+    .fc-status { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .fc-status.high { background: var(--green); box-shadow: 0 0 8px rgba(16,185,129,0.5); }
+    .fc-status.medium { background: var(--amber); box-shadow: 0 0 8px rgba(245,158,11,0.5); }
+    .fc-status.low { background: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+    .fc-name { font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fc-right { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+    .tag {
+      padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.72rem; font-weight: 600;
+      white-space: nowrap;
+    }
+    .tag-locator { background: rgba(59,130,246,0.15); color: #93c5fd; }
+    .tag-timing { background: var(--amber-soft); color: #fbbf24; }
+    .tag-data { background: var(--purple-soft); color: #c4b5fd; }
+    .tag-env { background: var(--red-soft); color: #fca5a5; }
+    .tag-appbug { background: rgba(236,72,153,0.15); color: #f9a8d4; }
+    .tag-script { background: rgba(6,182,212,0.15); color: #67e8f9; }
+    .tag-unknown { background: rgba(100,116,139,0.2); color: #94a3b8; }
+    .tag-conf { font-weight: 700; }
+    .tag-conf-high { background: var(--green-soft); color: var(--green); }
+    .tag-conf-medium { background: var(--amber-soft); color: var(--amber); }
+    .tag-conf-low { background: var(--red-soft); color: var(--red); }
+    .fc-chevron { color: var(--text-dim); transition: transform 0.25s; font-size: 0.9rem; }
+    .failure-card.open .fc-chevron { transform: rotate(180deg); }
+
+    .failure-card-body { display: none; padding: 0 1.5rem 1.5rem; }
+    .failure-card.open .failure-card-body { display: block; }
+
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+    .detail-box {
+      background: rgba(6,8,13,0.6); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.2rem;
+    }
+    .detail-box h4 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 0.6rem; font-weight: 600; }
+    .detail-box p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+    .detail-box.full { grid-column: 1 / -1; }
+
+    .diff-block {
+      background: #020308; border: 1px solid var(--border); border-radius: 8px;
+      padding: 1rem; font-family: 'Fira Code', monospace; font-size: 0.78rem;
+      line-height: 1.65; overflow-x: auto; color: var(--text-secondary);
+      white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto;
+    }
+    .diff-add { color: var(--green); }
+    .diff-rem { color: var(--red); }
+
+    .log-block {
+      background: #020308; border: 1px solid var(--border); border-radius: 8px;
+      padding: 1rem; font-family: 'Fira Code', monospace; font-size: 0.78rem;
+      line-height: 1.6; color: var(--text-dim); max-height: 200px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-all;
+    }
+
+    /* ── Flaky Table ─────── */
+    .table-wrap {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      text-align: left; padding: 0.8rem 1.2rem; font-size: 0.75rem;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim);
+      background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border);
+      font-weight: 600;
+    }
+    tbody td { padding: 0.75rem 1.2rem; font-size: 0.88rem; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    .flaky-bar { width: 80px; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 0.5rem; }
+    .flaky-bar-fill { height: 100%; border-radius: 3px; }
+
+    /* ── Run Panel ─── */
+    .run-panel {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 2rem; max-width: 700px;
+    }
+    .run-panel h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .run-panel .desc { color: var(--text-dim); font-size: 0.88rem; margin-bottom: 1.5rem; }
+    .form-group { margin-bottom: 1.2rem; }
+    .form-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .form-input, .form-select {
+      width: 100%; padding: 0.6rem 0.9rem; background: var(--bg-input);
+      border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+      font-family: inherit; font-size: 0.88rem; outline: none; transition: var(--transition);
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--border-active); }
+    .form-select option { background: #111827; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: var(--text-secondary); cursor: pointer; }
+    .form-check input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+
+    /* ── Console output ─── */
+    .console-output {
+      background: #020308; border: 1px solid var(--border); border-radius: 8px;
+      padding: 1rem; font-family: 'Fira Code', monospace; font-size: 0.78rem;
+      line-height: 1.7; color: var(--green); max-height: 350px; overflow-y: auto;
+      white-space: pre-wrap; margin-top: 1rem; display: none;
+    }
+    .console-output.visible { display: block; }
+
+    /* ── Toast ─── */
+    .toast {
+      position: fixed; bottom: 2rem; right: 2rem; padding: 0.8rem 1.5rem;
+      border-radius: 10px; font-size: 0.88rem; font-weight: 600; color: #fff;
+      z-index: 9999; transform: translateY(100px); opacity: 0; transition: all 0.3s ease;
+      box-shadow: var(--shadow);
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { background: var(--green); }
+    .toast.error { background: var(--red); }
+    .toast.info { background: var(--primary); }
+
+    /* ── Empty state ─── */
+    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-dim); }
+    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+    .empty-state p { font-size: 0.95rem; }
+
+    /* ── Loading spinner ─── */
+    .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 1100px) {
+      .metrics-row { grid-template-columns: repeat(2, 1fr); }
+      .chart-section { grid-template-columns: 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🤖</div>
+      <h1>AI Copilot <span>Failure Analysis</span></h1>
+    </div>
+
+    <div class="nav-section">Overview</div>
+    <a class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+      <span class="nav-icon">📊</span> Dashboard
+    </a>
+    <a class="nav-item" data-page="failures" onclick="showPage('failures')">
+      <span class="nav-icon">🚨</span> Failure Triage <span class="nav-badge" id="navFailureCount">0</span>
+    </a>
+
+    <div class="nav-section">Intelligence</div>
+    <a class="nav-item" data-page="flaky" onclick="showPage('flaky')">
+      <span class="nav-icon">📈</span> Flaky Analytics
+    </a>
+
+    <div class="nav-section">Actions</div>
+    <a class="nav-item" data-page="run" onclick="showPage('run')">
+      <span class="nav-icon">▶️</span> Run Analysis
+    </a>
+
+    <div class="sidebar-footer">
+      <div style="font-size: 0.8rem; color: var(--text-dim);"><span class="status-dot"></span> Server Active</div>
+      <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.3rem;">v1.0 • Ollama / Claude</div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main">
+    <!-- Top bar -->
+    <div class="topbar">
+      <h2 id="pageTitle">Dashboard</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-outline btn-sm" onclick="refreshData()">↻ Refresh</button>
+        <button class="btn btn-primary btn-sm" onclick="showPage('run')">▶ Run Analysis</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ═══ Dashboard Page ═══ -->
+      <div class="page active" id="page-dashboard">
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-label">Total Tests</div>
+            <div class="metric-val" id="metricTotal" style="color: var(--text);">—</div>
+            <div class="metric-sub">in latest run</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Failures Triaged</div>
+            <div class="metric-val" id="metricFailures" style="color: var(--red);">—</div>
+            <div class="metric-sub">AI-classified root causes</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Pass Rate</div>
+            <div class="metric-val" id="metricPassRate" style="color: var(--green);">—</div>
+            <div class="metric-sub">automated test success</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Flaky Tests</div>
+            <div class="metric-val" id="metricFlaky" style="color: var(--amber);">—</div>
+            <div class="metric-sub">historically unstable</div>
+          </div>
+        </div>
+
+        <div class="chart-section">
+          <div class="chart-card">
+            <h3>🎯 Root Cause Distribution</h3>
+            <div id="distChart"></div>
+          </div>
+          <div class="chart-card">
+            <h3>🔥 Top Failures</h3>
+            <div id="topFailures"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Failures Page ═══ -->
+      <div class="page" id="page-failures">
+        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem;">
+          <span style="font-size: 0.85rem; color: var(--text-dim);">Filter:</span>
+          <button class="btn btn-outline btn-sm filter-btn active" data-filter="all" onclick="filterFailures('all')">All</button>
+          <button class="btn btn-outline btn-sm filter-btn" data-filter="Locator/Selector Issue" onclick="filterFailures('Locator/Selector Issue')">🎯 Locator</button>
+          <button class="btn btn-outline btn-sm filter-btn" data-filter="Timing/Sync Issue" onclick="filterFailures('Timing/Sync Issue')">⏱️ Timing</button>
+          <button class="btn btn-outline btn-sm filter-btn" data-filter="Environment/Infra Issue" onclick="filterFailures('Environment/Infra Issue')">🌐 Infra</button>
+          <button class="btn btn-outline btn-sm filter-btn" data-filter="Test Data Issue" onclick="filterFailures('Test Data Issue')">📦 Data</button>
+          <button class="btn btn-outline btn-sm filter-btn" data-filter="Application Bug" onclick="filterFailures('Application Bug')">🐛 App Bug</button>
+          <button class="btn btn-outline btn-sm filter-btn" data-filter="Test Script Bug" onclick="filterFailures('Test Script Bug')">📝 Script</button>
+        </div>
+        <div class="failures-list" id="failuresList"></div>
+      </div>
+
+      <!-- ═══ Flaky Analytics Page ═══ -->
+      <div class="page" id="page-flaky">
+        <div style="margin-bottom: 1.5rem;">
+          <p style="color: var(--text-dim); font-size: 0.9rem;">Historical failure frequency and flakiness scoring from SQLite run history.</p>
+        </div>
+        <div class="table-wrap" id="flakyTable"></div>
+      </div>
+
+      <!-- ═══ Run Analysis Page ═══ -->
+      <div class="page" id="page-run">
+        <div class="run-panel">
+          <h3>▶ Run AI Failure Analysis</h3>
+          <p class="desc">Trigger a new analysis run against your Playwright test results using the local Ollama LLM or Claude API.</p>
+
+          <div class="form-group">
+            <label class="form-label">Input File Path</label>
+            <input class="form-input" id="runInput" type="text" value="./real-tests/test-results/results.json" placeholder="Path to results.json or allure-results/" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">LLM Provider</label>
+              <select class="form-select" id="runProvider">
+                <option value="ollama" selected>Ollama (Local/Free)</option>
+                <option value="anthropic">Claude API</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Model</label>
+              <input class="form-input" id="runModel" type="text" value="qwen3:8b" placeholder="e.g. qwen3:8b, llama3" />
+            </div>
+          </div>
+
+          <div class="form-group" style="display: flex; gap: 2rem;">
+            <label class="form-check"><input type="checkbox" id="runDryRun" /> Dry Run (mock, no LLM call)</label>
+            <label class="form-check"><input type="checkbox" id="runApplyFix" /> Auto-apply code fixes</label>
+            <label class="form-check"><input type="checkbox" id="runVision" /> Vision screenshot analysis</label>
+          </div>
+
+          <button class="btn btn-primary" id="runBtn" onclick="triggerAnalysis()">
+            ▶ Start Analysis
+          </button>
+
+          <div class="console-output" id="runConsole"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ── State ──
+    let reportData = null;
+    let flakyData = [];
+    let currentFilter = 'all';
+
+    // ── Navigation ──
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('page-' + pageId).classList.add('active');
+      document.querySelector(`.nav-item[data-page="${pageId}"]`)?.classList.add('active');
+      const titles = { dashboard: 'Dashboard', failures: 'Failure Triage', flaky: 'Flaky Test Analytics', run: 'Run Analysis' };
+      document.getElementById('pageTitle').textContent = titles[pageId] || 'Dashboard';
+    }
+
+    function showToast(msg, type = 'info') {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = 'toast ' + type + ' show';
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function escapeHtml(s) {
+      if (!s) return '';
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ── Data Loading ──
+    async function refreshData() {
+      try {
+        const [reportRes, flakyRes] = await Promise.all([
+          fetch('/api/report'),
+          fetch('/api/flaky')
+        ]);
+        if (reportRes.ok) reportData = await reportRes.json();
+        if (flakyRes.ok) flakyData = await flakyRes.json();
+        renderDashboard();
+        renderFailures();
+        renderFlaky();
+        showToast('Data refreshed', 'success');
+      } catch (err) {
+        showToast('Failed to load data', 'error');
+      }
+    }
+
+    // ── Dashboard Render ──
+    function renderDashboard() {
+      if (!reportData) {
+        document.getElementById('metricTotal').textContent = '—';
+        document.getElementById('metricFailures').textContent = '—';
+        document.getElementById('metricPassRate').textContent = '—';
+        return;
+      }
+      const r = reportData;
+      document.getElementById('metricTotal').textContent = r.totalTests || 0;
+      document.getElementById('metricFailures').textContent = r.totalFailures || 0;
+      const passRate = r.totalTests > 0 ? ((1 - r.totalFailures / r.totalTests) * 100).toFixed(1) + '%' : '—';
+      document.getElementById('metricPassRate').textContent = passRate;
+      document.getElementById('metricFlaky').textContent = flakyData.length || 0;
+      document.getElementById('navFailureCount').textContent = r.totalFailures || 0;
+
+      // Distribution chart
+      const cats = {};
+      (r.analyses || []).forEach(a => { cats[a.category] = (cats[a.category] || 0) + 1; });
+      const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+      const maxCount = sorted.length ? sorted[0][1] : 1;
+      const colors = {
+        'Locator/Selector Issue': '#3b82f6',
+        'Timing/Sync Issue': '#f59e0b',
+        'Test Data Issue': '#a855f7',
+        'Environment/Infra Issue': '#ef4444',
+        'Application Bug': '#ec4899',
+        'Test Script Bug': '#06b6d4',
+        'Unknown/Needs Manual Review': '#64748b',
+      };
+      document.getElementById('distChart').innerHTML = sorted.map(([cat, count]) => {
+        const pct = ((count / (r.totalFailures || 1)) * 100).toFixed(0);
+        const w = ((count / maxCount) * 100).toFixed(0);
+        const c = colors[cat] || '#64748b';
+        return `<div class="bar-row">
+          <span class="bar-label">${cat}</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${w}%;background:${c}"><span>${count} (${pct}%)</span></div>
+          </div>
+        </div>`;
+      }).join('');
+
+      // Top failures
+      document.getElementById('topFailures').innerHTML = (r.analyses || []).slice(0, 5).map(a => `
+        <div style="display:flex;align-items:center;gap:0.7rem;padding:0.55rem 0;border-bottom:1px solid var(--border);">
+          <span class="fc-status ${a.confidence === 'High' ? 'high' : a.confidence === 'Medium' ? 'medium' : 'low'}"></span>
+          <span style="flex:1;font-size:0.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(a.testName)}</span>
+          <span class="tag ${getCategoryTagClass(a.category)}" style="flex-shrink:0">${a.category}</span>
+        </div>
+      `).join('');
+    }
+
+    function getCategoryTagClass(cat) {
+      if (cat.includes('Locator')) return 'tag-locator';
+      if (cat.includes('Timing')) return 'tag-timing';
+      if (cat.includes('Data')) return 'tag-data';
+      if (cat.includes('Env') || cat.includes('Infra')) return 'tag-env';
+      if (cat.includes('Application')) return 'tag-appbug';
+      if (cat.includes('Script')) return 'tag-script';
+      return 'tag-unknown';
+    }
+
+    // ── Failures Render ──
+    function renderFailures() {
+      const container = document.getElementById('failuresList');
+      if (!reportData || !reportData.analyses || reportData.analyses.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p>No failures to display. Run analysis to see results.</p></div>';
+        return;
+      }
+      const analyses = currentFilter === 'all' ? reportData.analyses : reportData.analyses.filter(a => a.category === currentFilter);
+      container.innerHTML = analyses.map((a, i) => `
+        <div class="failure-card" id="fc-${i}">
+          <div class="failure-card-header" onclick="toggleCard(${i})">
+            <div class="fc-left">
+              <span class="fc-status ${a.confidence === 'High' ? 'high' : a.confidence === 'Medium' ? 'medium' : 'low'}"></span>
+              <span class="fc-name">${escapeHtml(a.testName)}</span>
+            </div>
+            <div class="fc-right">
+              <span class="tag ${getCategoryTagClass(a.category)}">${a.category}</span>
+              <span class="tag tag-conf tag-conf-${a.confidence.toLowerCase()}">${a.confidence}</span>
+              <span class="fc-chevron">▼</span>
+            </div>
+          </div>
+          <div class="failure-card-body">
+            <div class="detail-grid">
+              <div class="detail-box">
+                <h4>💡 AI Diagnosis</h4>
+                <p>${escapeHtml(a.explanation)}</p>
+              </div>
+              <div class="detail-box">
+                <h4>🔧 Suggested Action</h4>
+                <p>${escapeHtml(a.suggestedAction)}</p>
+              </div>
+              ${a.visualAnalysis ? `<div class="detail-box full"><h4>🖼️ Visual Analysis</h4><p>${escapeHtml(a.visualAnalysis)}</p></div>` : ''}
+              <div class="detail-box full">
+                <h4>📋 Relevant Log Excerpt</h4>
+                <div class="log-block">${escapeHtml(a.relevantLogExcerpt)}</div>
+              </div>
+              ${a.codeFix ? `
+                <div class="detail-box full">
+                  <h4 style="display:flex;align-items:center;justify-content:space-between;">
+                    🛠️ Proposed Code Fix
+                    <button class="btn btn-success btn-sm" onclick='applyFix(${JSON.stringify(a.codeFix).replace(/'/g, "\\'")})'> ⚡ Apply Fix</button>
+                  </h4>
+                  <div class="diff-block">${formatDiff(a.codeFix.unifiedDiff)}</div>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function toggleCard(i) {
+      document.getElementById('fc-' + i).classList.toggle('open');
+    }
+
+    function filterFailures(cat) {
+      currentFilter = cat;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`.filter-btn[data-filter="${cat}"]`)?.classList.add('active');
+      renderFailures();
+    }
+
+    function formatDiff(diffStr) {
+      if (!diffStr) return '';
+      return escapeHtml(diffStr).split('\n').map(line => {
+        if (line.startsWith('+') && !line.startsWith('+++')) return `<span class="diff-add">${line}</span>`;
+        if (line.startsWith('-') && !line.startsWith('---')) return `<span class="diff-rem">${line}</span>`;
+        return line;
+      }).join('\n');
+    }
+
+    // ── Apply Fix ──
+    async function applyFix(codeFix) {
+      try {
+        const res = await fetch('/api/apply-fix', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codeFix }),
+        });
+        const data = await res.json();
+        if (data.success) { showToast('Code fix applied to disk!', 'success'); }
+        else { showToast('Failed to apply fix', 'error'); }
+      } catch (err) { showToast('Error: ' + err.message, 'error'); }
+    }
+
+    // ── Flaky Render ──
+    function renderFlaky() {
+      const container = document.getElementById('flakyTable');
+      if (!flakyData || flakyData.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:3rem;"><div class="empty-icon">📈</div><p>No historical data yet. Run analysis multiple times to build history.</p></div>';
+        return;
+      }
+      container.innerHTML = `<table>
+        <thead><tr><th>Test Name</th><th>Runs</th><th>Failures</th><th>Flakiness Score</th><th>Last Run</th></tr></thead>
+        <tbody>${flakyData.map(f => {
+          const barColor = f.flakinessScore > 0.7 ? 'var(--red)' : f.flakinessScore > 0.3 ? 'var(--amber)' : 'var(--green)';
+          return `<tr>
+            <td style="max-width:350px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(f.testName)}</td>
+            <td>${f.totalRuns}</td>
+            <td>${f.totalFailures}</td>
+            <td>
+              <span class="flaky-bar"><span class="flaky-bar-fill" style="width:${f.flakinessScore * 100}%;background:${barColor}"></span></span>
+              ${(f.flakinessScore * 100).toFixed(0)}%
+            </td>
+            <td style="font-size:0.8rem;color:var(--text-dim);">${new Date(f.lastRunTimestamp).toLocaleString()}</td>
+          </tr>`;
+        }).join('')}</tbody></table>`;
+    }
+
+    // ── Run Analysis ──
+    async function triggerAnalysis() {
+      const btn = document.getElementById('runBtn');
+      const consoleEl = document.getElementById('runConsole');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Running...';
+      consoleEl.classList.add('visible');
+      consoleEl.textContent = '> Starting AI Failure Analysis pipeline...\n';
+
+      const payload = {
+        input: document.getElementById('runInput').value,
+        provider: document.getElementById('runProvider').value,
+        model: document.getElementById('runModel').value,
+        dryRun: document.getElementById('runDryRun').checked,
+        applyFix: document.getElementById('runApplyFix').checked,
+        vision: document.getElementById('runVision').checked,
+      };
+
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.success) {
+          consoleEl.textContent += `> ✅ Analysis complete! ${data.report?.totalFailures || 0} failure(s) triaged.\n`;
+          consoleEl.textContent += `> Reports saved to output/\n`;
+          reportData = data.report;
+          renderDashboard();
+          renderFailures();
+          showToast('Analysis complete!', 'success');
+        } else {
+          consoleEl.textContent += '> ❌ Error: ' + (data.error || 'Unknown error') + '\n';
+          showToast('Analysis failed', 'error');
+        }
+      } catch (err) {
+        consoleEl.textContent += '> ❌ Network error: ' + err.message + '\n';
+        showToast('Analysis error', 'error');
+      }
+      btn.disabled = false;
+      btn.innerHTML = '▶ Start Analysis';
+    }
+
+    // ── Initial Load ──
+    (async () => {
+      try {
+        const [reportRes, flakyRes] = await Promise.all([
+          fetch('/api/report').catch(() => null),
+          fetch('/api/flaky').catch(() => null)
+        ]);
+        if (reportRes?.ok) reportData = await reportRes.json();
+        if (flakyRes?.ok) flakyData = await flakyRes.json();
+      } catch {}
+      renderDashboard();
+      renderFailures();
+      renderFlaky();
+    })();
+  </script>
+</body>
+</html>

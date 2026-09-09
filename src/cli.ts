@@ -158,6 +158,12 @@ async function runAnalysis(options: {
 
   const writtenFiles: string[] = [];
 
+  // Always save JSON for dashboard API access
+  const jsonPath = `${outputPath}.json`;
+  await writeFile(jsonPath, JSON.stringify(report, null, 2), 'utf-8');
+  writtenFiles.push(jsonPath);
+  console.log(chalk.green(`  ✓ JSON report: ${jsonPath}`));
+
   if (format === 'md' || format === 'both') {
     const mdPath = `${outputPath}.md`;
     const mdContent = generateMarkdownReport(report);
