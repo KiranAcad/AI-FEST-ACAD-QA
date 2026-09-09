@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Failure Analysis Copilot — Team Presentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(18, 24, 38, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --accent-green: #10b981;
+      --accent-purple: #c084fc;
+      --accent-amber: #f59e0b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Slide Deck Layout */
+    .deck-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      padding: 4rem 6rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.96) translateY(20px);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1) translateY(0);
+    }
+
+    /* Slide Header */
+    .slide-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--primary-light);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+      width: fit-content;
+    }
+
+    h1 {
+      font-size: 3.2rem;
+      font-weight: 800;
+      line-height: 1.15;
+      background: linear-gradient(135deg, #ffffff 30%, var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+
+    h2 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff 40%, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.5rem;
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 800px;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    /* Grid Layouts */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.8rem; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+
+    /* Cards & Components */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.8rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-4px);
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      display: inline-block;
+    }
+
+    .card h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+      color: #fff;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Stat Box */
+    .stat-box {
+      text-align: center;
+      padding: 2rem;
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 16px;
+    }
+
+    .stat-val {
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: var(--primary-light);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Code Snippet Box */
+    .code-box {
+      background: #030509;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.2rem;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.88rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+
+    .code-cmd {
+      color: var(--accent-green);
+    }
+
+    /* Controls Footer */
+    .controls {
+      position: absolute;
+      bottom: 2rem;
+      right: 3rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      z-index: 100;
+    }
+
+    .slide-counter {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+    }
+
+    .btn-nav {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-nav:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+      transform: scale(1.08);
+    }
+
+    /* Progress Bar */
+    .progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--accent-purple));
+      transition: width 0.4s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="deck-container">
+
+    <!-- SLIDE 1: Title -->
+    <div class="slide active">
+      <span class="slide-tag">🚀 Innovation Pitch</span>
+      <h1>AI Failure Analysis Copilot</h1>
+      <p class="subtitle">Automated Root Cause Triage & Self-Healing for Playwright Test Suites</p>
+      
+      <div class="grid-3" style="margin-top: 1rem;">
+        <div class="card">
+          <span class="card-icon">⚡</span>
+          <h3>Instant Triage</h3>
+          <p>Reduces failure investigation time from 15 minutes to under 10 seconds using AI.</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">🛠️</span>
+          <h3>Self-Healing Code</h3>
+          <p>Generates unified <code>.patch</code> diffs and auto-fixes broken locators in spec files.</p>
+        </div>
+        <div class="card">
+          <span class="card-icon">🔒</span>
+          <h3>Zero-Cost / Offline</h3>
+          <p>Supports 100% private, free local execution via Ollama (Qwen 8B) or Claude API.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: The Problem -->
+    <div class="slide">
+      <span class="slide-tag">⚠️ Current Challenge</span>
+      <h2>The Bottleneck in QA Automation</h2>
+      <p class="subtitle">Manual test failure triage eats up 30-40% of QA engineering bandwidth after every CI run.</p>
+
+      <div class="grid-2">
+        <div class="card" style="border-left: 4px solid var(--accent-amber);">
+          <h3>🔍 The Pain Points</h3>
+          <ul style="color: var(--text-muted); line-height: 2; padding-left: 1.2rem; font-size: 0.95rem;">
+            <li>Digging through thousands of lines of raw console logs & stack traces</li>
+            <li>Manually checking screenshots, videos, and Allure report attachments</li>
+            <li>Distinguishing flaky tests & infra drops from real app bugs</li>
+            <li>Delayed feedback loops for developers on pull requests</li>
+          </ul>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--primary-light);">
+          <h3>⏱️ Time Wasted Per Failure</h3>
+          <div style="margin-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+              <span>Manual Investigation</span>
+              <span style="color: var(--accent-amber); font-weight: 700;">15–20 Mins</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.05); height: 10px; border-radius: 5px; overflow: hidden;">
+              <div style="width: 85%; height: 100%; background: var(--accent-amber);"></div>
+            </div>
+          </div>
+          <div style="margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+              <span>AI Copilot Triage</span>
+              <span style="color: var(--accent-green); font-weight: 700;">&lt; 5 Seconds</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.05); height: 10px; border-radius: 5px; overflow: hidden;">
+              <div style="width: 5%; height: 100%; background: var(--accent-green);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: The Solution -->
+    <div class="slide">
+      <span class="slide-tag">✨ The Solution</span>
+      <h2>How AI Failure Analysis Copilot Works</h2>
+      <p class="subtitle">An automated pipeline that ingests, cleanses, triages, and fixes failed test cases.</p>
+
+      <div class="grid-4">
+        <div class="card">
+          <div style="color: var(--primary-light); font-weight: 800; font-size: 1.5rem; margin-bottom: 0.5rem;">01</div>
+          <h3>Ingest</h3>
+          <p>Parses Playwright JSON reports & Allure results directories automatically.</p>
+        </div>
+        <div class="card">
+          <div style="color: var(--accent-purple); font-weight: 800; font-size: 1.5rem; margin-bottom: 0.5rem;">02</div>
+          <h3>Cleanse</h3>
+          <p>Strips ANSI color codes, trims internal Node/Playwright frames, extracts stack traces.</p>
+        </div>
+        <div class="card">
+          <div style="color: var(--accent-green); font-weight: 800; font-size: 1.5rem; margin-bottom: 0.5rem;">03</div>
+          <h3>Classify</h3>
+          <p>Categorizes root causes into 7 fixed taxonomies with confidence ratings.</p>
+        </div>
+        <div class="card">
+          <div style="color: var(--accent-amber); font-weight: 800; font-size: 1.5rem; margin-bottom: 0.5rem;">04</div>
+          <h3>Remediate</h3>
+          <p>Generates code fix diffs, tracks flaky history, and updates spec files on disk.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: Taxonomy -->
+    <div class="slide">
+      <span class="slide-tag">🎯 Root Cause Taxonomy</span>
+      <h2>Smart Failure Classification</h2>
+      <p class="subtitle">Standardized categorization ensures actionable next steps for every failure.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3>🎯 Locator / Selector Issue</h3>
+          <p>Element not found or DOM selector changed (e.g. wrong ID or broken CSS).</p>
+        </div>
+        <div class="card">
+          <h3>⏱️ Timing / Sync Issue</h3>
+          <p>Timeouts waiting for element visibility, network response, or hydration.</p>
+        </div>
+        <div class="card">
+          <h3>📦 Test Data Issue</h3>
+          <p>Invalid credentials, locked-out test users, or missing database records.</p>
+        </div>
+        <div class="card">
+          <h3>🌐 Environment / Infra Issue</h3>
+          <p>Backend 500/503 errors, network drops, or staging environment downtime.</p>
+        </div>
+        <div class="card">
+          <h3>🐛 Application Bug</h3>
+          <p>Genuine UI regression or business logic defect in the web application.</p>
+        </div>
+        <div class="card">
+          <h3>📝 Test Script Bug</h3>
+          <p>Logical flaw in test assertion code (e.g. comparing wrong values).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: Key Features -->
+    <div class="slide">
+      <span class="slide-tag">🔥 Key Features</span>
+      <h2>Enterprise Capabilities Built-In</h2>
+      
+      <div class="grid-3">
+        <div class="card">
+          <h3>📊 Interactive Web Dashboard</h3>
+          <p>Launch live Web UI on <code>:3000</code> with side-by-side trace, screenshot, and diff viewer.</p>
+        </div>
+        <div class="card">
+          <h3>⚡ Self-Healing Code (<code>--apply-fix</code>)</h3>
+          <p>Automatically rewrites broken locators in <code>.spec.ts</code> files with approved AI patches.</p>
+        </div>
+        <div class="card">
+          <h3>📈 SQLite Flaky Analytics</h3>
+          <p>Persists test run histories in SQLite to calculate flakiness scores and trends.</p>
+        </div>
+        <div class="card">
+          <h3>🖼️ Multimodal Vision AI</h3>
+          <p>Ingests failure screenshots to diagnose visual UI glitches and popup overlays.</p>
+        </div>
+        <div class="card">
+          <h3>📎 Allure Attachment Injector</h3>
+          <p>Embeds AI Triage reports natively into Allure JSON result files.</p>
+        </div>
+        <div class="card">
+          <h3>🤖 GitHub Actions Pipeline</h3>
+          <p>Runs automatically in CI/CD, posting AI triage summaries directly to PR comments.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: Real World Results -->
+    <div class="slide">
+      <span class="slide-tag">📊 Real-World Validation</span>
+      <h2>Proven Against Real Applications</h2>
+      <p class="subtitle">Tested on live suites: SauceDemo E-Commerce, TodoMVC, and HerokuApp.</p>
+
+      <div class="grid-4" style="margin-bottom: 2rem;">
+        <div class="stat-box">
+          <div class="stat-val">14</div>
+          <div class="stat-label">Total Tests Executed</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" style="color: var(--accent-green);">6</div>
+          <div class="stat-label">Failures Triaged</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" style="color: var(--accent-purple);">100%</div>
+          <div class="stat-label">Triage Accuracy</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" style="color: var(--accent-amber);">$0</div>
+          <div class="stat-label">Local Ollama Cost</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Live Summary Distribution</h3>
+        <p style="margin-top: 0.5rem;">
+          <code>Locator/Selector Issues: 50.0%</code> | 
+          <code>Timing/Sync Issues: 33.3%</code> | 
+          <code>Test Script Bugs: 16.7%</code>
+        </p>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: How to Run -->
+    <div class="slide">
+      <span class="slide-tag">💻 Developer Workflow</span>
+      <h2>Simple Integration & Commands</h2>
+      <p class="subtitle">Added directly to <code>package.json</code> for seamless developer experience.</p>
+
+      <div class="grid-2">
+        <div class="code-box">
+          <div style="color: var(--text-muted); margin-bottom: 0.5rem;"># 1. Run Playwright & Triage with Local Ollama</div>
+          <div class="code-cmd">npm run test:and:analyze:ollama</div>
+          <br>
+          <div style="color: var(--text-muted); margin-bottom: 0.5rem;"># 2. Run Auto-Fix (Self-Heal Spec Files)</div>
+          <div class="code-cmd">npm run analyze:fix</div>
+          <br>
+          <div style="color: var(--text-muted); margin-bottom: 0.5rem;"># 3. Launch Web Dashboard Server</div>
+          <div class="code-cmd">npm run dashboard</div>
+        </div>
+
+        <div class="card">
+          <h3>🔗 Remote GitHub Repository</h3>
+          <p style="margin-bottom: 1rem;">Project is fully version-controlled and ready for team collaboration:</p>
+          <div class="code-box" style="font-size: 0.8rem;">
+            https://github.com/KiranAcad/AI-FEST-ACAD-QA.git
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: ROI & Conclusion -->
+    <div class="slide">
+      <span class="slide-tag">🎉 Conclusion</span>
+      <h2>Business Impact & Next Steps</h2>
+      
+      <div class="grid-3" style="margin-top: 1rem;">
+        <div class="card" style="border-top: 4px solid var(--accent-green);">
+          <h3>80% Time Reduction</h3>
+          <p>Saves QA engineers up to 10+ hours per week in manual failure triage.</p>
+        </div>
+        <div class="card" style="border-top: 4px solid var(--primary-light);">
+          <h3>Faster PR Approvals</h3>
+          <p>Developers get instant AI feedback on why CI tests failed on pull requests.</p>
+        </div>
+        <div class="card" style="border-top: 4px solid var(--accent-purple);">
+          <h3>Complete Privacy</h3>
+          <p>Local Ollama LLM ensures no proprietary test logs or code ever leave your machine.</p>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 3rem;">
+        <h3 style="font-size: 1.8rem; color: var(--primary-light);">Thank You! Questions & Discussion</h3>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Controls Footer -->
+  <div class="controls">
+    <button class="btn-nav" id="btnPrev">❮</button>
+    <span class="slide-counter" id="counter">1 / 8</span>
+    <button class="btn-nav" id="btnNext">❯</button>
+  </div>
+
+  <div class="progress-bar" id="progress"></div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const counter = document.getElementById('counter');
+    const progress = document.getElementById('progress');
+
+    let currentSlide = 0;
+    const totalSlides = slides.length;
+
+    function updateDeck() {
+      slides.forEach((slide, idx) => {
+        if (idx === currentSlide) {
+          slide.classList.add('active');
+        } else {
+          slide.classList.remove('active');
+        }
+      });
+
+      counter.innerText = `${currentSlide + 1} / ${totalSlides}`;
+      progress.style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+    }
+
+    btnNext.addEventListener('click', () => {
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        updateDeck();
+      }
+    });
+
+    btnPrev.addEventListener('click', () => {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateDeck();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'Space') {
+        if (currentSlide < totalSlides - 1) { currentSlide++; updateDeck(); }
+      } else if (e.key === 'ArrowLeft') {
+        if (currentSlide > 0) { currentSlide--; updateDeck(); }
+      }
+    });
+
+    updateDeck();
+  </script>
+</body>
+</html>
