@@ -33,3 +33,13 @@ data/
 
 # Backup files from auto-fix
 *.bak
+
+# Presentation files & slide decks
+*presentation*
+*PRESENTATION*
+docs/presentation.md
+docs/PRESENTATION.html
+PRESENTATION.md
+*.pptx
+*.ppt
+*.key

@@ -20,6 +20,14 @@ export function startDashboardServer(
 ): express.Express {
   const app = express();
   app.use(express.json({ limit: '50mb' }));
+  app.use('/docs', express.static(path.resolve(process.cwd(), 'docs')));
+  app.get('/presentation', (_req, res) => {
+    const presentationPath = path.resolve(process.cwd(), 'docs/PRESENTATION.html');
+    if (fs.existsSync(presentationPath)) {
+      return res.type('html').send(fs.readFileSync(presentationPath, 'utf-8'));
+    }
+    res.status(404).send('Presentation not found.');
+  });
 
   let currentReport: AnalysisReport | null | undefined = latestReport;
 
