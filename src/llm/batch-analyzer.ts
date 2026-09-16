@@ -5,6 +5,7 @@
  * with progress logging and aggregated token usage tracking.
  */
 
+import path from 'node:path';
 import chalk from 'chalk';
 import {
   ParsedFailure,
@@ -17,6 +18,18 @@ import { createAnalyzer, AnalyzerConfig } from './analyzer.js';
 import { generateCodeFix } from '../autofix/diff-generator.js';
 import { recordTestResult, getFlakyTestMetrics } from '../db/history.js';
 import { analyzeScreenshot } from './vision-analyzer.js';
+
+export interface AnalysisProgressEvent {
+  index: number;
+  total: number;
+  testName: string;
+  category?: string;
+  confidence?: string;
+  status: 'start' | 'done' | 'error';
+  message?: string;
+}
+
+export type AnalysisProgressCallback = (event: AnalysisProgressEvent) => void;
 
 export interface BatchAnalyzerConfig extends AnalyzerConfig {
   /** If true, use mock analyzer instead of real Claude API */
@@ -35,7 +48,9 @@ export async function analyzeBatch(
   failures: ParsedFailure[],
   config: BatchAnalyzerConfig,
   inputPath: string,
-  totalTests: number
+  totalTests: number,
+  onProgress?: AnalysisProgressCallback,
+  abortSignal?: AbortSignal
 ): Promise<AnalysisReport> {
   const analyses: FailureAnalysis[] = [];
   const aggregateUsage: TokenUsage = { inputTokens: 0, outputTokens: 0, estimatedCost: 0 };
@@ -43,7 +58,18 @@ export async function analyzeBatch(
   if (config.dryRun) {
     console.log(chalk.yellow('\n🔸 Dry-run mode — using mock analysis (no API calls)\n'));
     for (let i = 0; i < failures.length; i++) {
+      if (abortSignal?.aborted) {
+        throw new Error('Analysis cancelled by user.');
+      }
       const failure = failures[i];
+      onProgress?.({
+        index: i + 1,
+        total: failures.length,
+        testName: failure.testName,
+        status: 'start',
+        message: `[${i + 1}/${failures.length}] Analyzing ${truncate(failure.testName, 55)} (Dry Run)...`,
+      });
+
       console.log(
         chalk.dim(`  [${i + 1}/${failures.length}] `) +
           chalk.white(truncate(failure.testName, 60)) +
@@ -52,6 +78,11 @@ export async function analyzeBatch(
       );
       const mockAnalysis = createMockAnalysis(failure);
 
+      // Optional vision analysis in dry-run mode
+      if (config.vision && failure.screenshotPath) {
+        mockAnalysis.visualAnalysis = `[Dry Run] Screenshot ${path.basename(failure.screenshotPath)} inspected: UI state at failure timestamp confirms target element was unavailable or obscured in DOM.`;
+      }
+
       // Generate code fix patch
       mockAnalysis.codeFix = generateCodeFix(failure, mockAnalysis.suggestedAction);
 
@@ -59,6 +90,16 @@ export async function analyzeBatch(
       recordTestResult(failure, mockAnalysis);
 
       analyses.push(mockAnalysis);
+
+      onProgress?.({
+        index: i + 1,
+        total: failures.length,
+        testName: failure.testName,
+        category: mockAnalysis.category,
+        confidence: mockAnalysis.confidence,
+        status: 'done',
+        message: `[${i + 1}/${failures.length}] ${truncate(failure.testName, 50)} → ${mockAnalysis.category} (${mockAnalysis.confidence})`,
+      });
     }
   } else {
     const analyzer = createAnalyzer(config);
@@ -67,8 +108,19 @@ export async function analyzeBatch(
     );
 
     for (let i = 0; i < failures.length; i++) {
+      if (abortSignal?.aborted) {
+        throw new Error('Analysis cancelled by user.');
+      }
       const failure = failures[i];
       const prefix = chalk.dim(`  [${i + 1}/${failures.length}] `);
+
+      onProgress?.({
+        index: i + 1,
+        total: failures.length,
+        testName: failure.testName,
+        status: 'start',
+        message: `[${i + 1}/${failures.length}] AI Triaging: ${truncate(failure.testName, 55)}...`,
+      });
 
       try {
         process.stdout.write(prefix + chalk.white(truncate(failure.testName, 60)) + chalk.dim(' → '));
@@ -102,7 +154,17 @@ export async function analyzeBatch(
         aggregateUsage.inputTokens += tokenUsage.inputTokens;
         aggregateUsage.outputTokens += tokenUsage.outputTokens;
         aggregateUsage.estimatedCost += tokenUsage.estimatedCost;
-      } catch (error) {
+
+        onProgress?.({
+          index: i + 1,
+          total: failures.length,
+          testName: failure.testName,
+          category: analysis.category,
+          confidence: analysis.confidence,
+          status: 'done',
+          message: `[${i + 1}/${failures.length}] ${truncate(failure.testName, 50)} → ${analysis.category} (${analysis.confidence})`,
+        });
+      } catch (error: any) {
         console.log(chalk.red('ERROR'));
         console.error(chalk.red(`    ${error instanceof Error ? error.message : String(error)}`));
 
@@ -118,6 +180,16 @@ export async function analyzeBatch(
         fallback.codeFix = generateCodeFix(failure, fallback.suggestedAction);
         recordTestResult(failure, fallback);
         analyses.push(fallback);
+
+        onProgress?.({
+          index: i + 1,
+          total: failures.length,
+          testName: failure.testName,
+          category: fallback.category,
+          confidence: fallback.confidence,
+          status: 'error',
+          message: `[${i + 1}/${failures.length}] ${truncate(failure.testName, 50)} → ERROR: ${error.message || 'Analysis failed'}`,
+        });
       }
     }
   }

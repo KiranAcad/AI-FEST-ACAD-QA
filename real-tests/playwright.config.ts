@@ -2,8 +2,8 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 15000,
-  retries: 1,
+  timeout: 10000,
+  retries: 0,
   reporter: [
     ['json', { outputFile: 'test-results/results.json' }],
     ['list'],

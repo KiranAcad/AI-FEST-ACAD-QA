@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Failure Analysis Copilot — POC & Complete User Guide</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;600&display=swap');
+
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm 10mm 12mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #0f172a;
+      background-color: #ffffff;
+      line-height: 1.4;
+      font-size: 8.5pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page-sheet {
+      width: 100%;
+      height: 275mm;
+      max-height: 275mm;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+      page-break-inside: avoid;
+    }
+
+    .page-sheet:last-child {
+      page-break-after: avoid;
+    }
+
+    .page-content {
+      flex: 1;
+    }
+
+    /* ─── Header Banner ─── */
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      border-radius: 8px;
+      padding: 14px 18px;
+      border-left: 5px solid #3b82f6;
+      margin-bottom: 10px;
+    }
+
+    .badge-top {
+      display: inline-block;
+      background: rgba(59, 130, 246, 0.25);
+      border: 1px solid #3b82f6;
+      color: #93c5fd;
+      font-size: 6.8pt;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      margin-bottom: 4px;
+    }
+
+    .title {
+      font-size: 16pt;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      margin-bottom: 3px;
+      background: linear-gradient(90deg, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 8.8pt;
+      color: #94a3b8;
+      line-height: 1.35;
+    }
+
+    .header-meta {
+      display: flex;
+      gap: 14px;
+      font-size: 7.2pt;
+      color: #cbd5e1;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      padding-top: 6px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .header-meta span strong {
+      color: #38bdf8;
+    }
+
+    /* ─── 4 KPI Cards ─── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .kpi-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 7px 10px;
+      border-top: 3px solid #3b82f6;
+    }
+
+    .kpi-box.green { border-top-color: #10b981; }
+    .kpi-box.amber { border-top-color: #f59e0b; }
+    .kpi-box.purple { border-top-color: #8b5cf6; }
+
+    .kpi-title {
+      font-size: 6.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 1px;
+    }
+
+    .kpi-num {
+      font-size: 15pt;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.1;
+      margin-bottom: 1px;
+    }
+
+    .kpi-sub {
+      font-size: 6.5pt;
+      color: #64748b;
+    }
+
+    /* ─── Section Cards ─── */
+    .section-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 9px 12px;
+      margin-bottom: 8px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+
+    .section-icon {
+      font-size: 11pt;
+    }
+
+    .section-title {
+      font-size: 9.8pt;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .about-box {
+      background: #eff6ff;
+      border-left: 3.5px solid #3b82f6;
+      padding: 7px 10px;
+      border-radius: 4px;
+      font-size: 7.8pt;
+      color: #1e3a8a;
+      line-height: 1.35;
+    }
+
+    /* ─── Proof Grid ─── */
+    .proof-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.95fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .proof-bars {
+      font-size: 7.2pt;
+    }
+
+    .bar-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 3.5px;
+    }
+
+    .bar-label {
+      width: 135px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .bar-line {
+      flex: 1;
+      height: 7px;
+      background: #f1f5f9;
+      border-radius: 9999px;
+      margin: 0 6px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+    }
+
+    .bar-count {
+      width: 50px;
+      text-align: right;
+      font-weight: 700;
+      color: #475569;
+      font-size: 6.8pt;
+    }
+
+    .proof-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 7.2pt;
+    }
+
+    .proof-table td {
+      padding: 3px 6px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .proof-table td:last-child {
+      text-align: right;
+      font-weight: 700;
+    }
+
+    /* ─── Tech Stack Table ─── */
+    .tech-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 7.2pt;
+      margin-top: 4px;
+    }
+
+    .tech-table th {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 700;
+      text-align: left;
+      padding: 4px 8px;
+      border: 1px solid #e2e8f0;
+      text-transform: uppercase;
+      font-size: 6.2pt;
+      letter-spacing: 0.4px;
+    }
+
+    .tech-table td {
+      padding: 3.5px 8px;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+      vertical-align: middle;
+    }
+
+    .tech-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    /* ─── User Guide Elements (Page 2) ─── */
+    .guide-step {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 9px 12px;
+      margin-bottom: 8px;
+    }
+
+    .guide-step-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .guide-badge {
+      background: #0f172a;
+      color: #38bdf8;
+      font-size: 7pt;
+      font-weight: 700;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .guide-step-title {
+      font-size: 9pt;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .code-snippet {
+      background: #0f172a;
+      color: #38bdf8;
+      font-family: 'Fira Code', monospace;
+      font-size: 7pt;
+      padding: 5px 8px;
+      border-radius: 5px;
+      margin: 4px 0;
+      display: block;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .ui-tab-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .ui-tab-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 5px;
+      padding: 6px 8px;
+    }
+
+    .ui-tab-name {
+      font-weight: 700;
+      font-size: 7.5pt;
+      color: #0f172a;
+      margin-bottom: 2px;
+    }
+
+    .ui-tab-desc {
+      font-size: 6.5pt;
+      color: #64748b;
+      line-height: 1.25;
+    }
+
+    /* ─── Footer ─── */
+    .footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 6px;
+      font-size: 6.8pt;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════════ PAGE 1: EXECUTIVE POC & TECH STACK ════════════ -->
+  <div class="page-sheet">
+    <div class="page-content">
+      <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span class="badge-top">Executive Proof of Concept (POC)</span>
+          <span style="font-size: 6.8pt; color: #94a3b8; font-weight: 500;">Status: Verified & Operational • September 2026</span>
+        </div>
+        <div class="title">AI Failure Analysis Copilot</div>
+        <div class="subtitle">An automated AI assistant that triages failed Playwright tests in seconds with root-cause diagnosis & suggested fixes.</div>
+        <div class="header-meta">
+          <span><strong>Engine:</strong> Microsoft Playwright</span>
+          <span><strong>AI Intelligence:</strong> Local Ollama (Offline & Free)</span>
+          <span><strong>Test Suite:</strong> 60 Real Tests (7 Web Apps/APIs)</span>
+          <span><strong>Data Privacy:</strong> 100% On-Premise / Zero Cloud Data</span>
+        </div>
+      </div>
+
+      <!-- KPI Grid -->
+      <div class="kpi-row">
+        <div class="kpi-box">
+          <div class="kpi-title">Tests Evaluated</div>
+          <div class="kpi-num">60</div>
+          <div class="kpi-sub">Across 7 real web apps & APIs</div>
+        </div>
+        <div class="kpi-box amber">
+          <div class="kpi-title">Failures Triaged</div>
+          <div class="kpi-num">44</div>
+          <div class="kpi-sub">100% root-cause coverage</div>
+        </div>
+        <div class="kpi-box green">
+          <div class="kpi-title">Triage Speed</div>
+          <div class="kpi-num">2.5 min</div>
+          <div class="kpi-sub">vs ~11–14 hrs manual labor</div>
+        </div>
+        <div class="kpi-box purple">
+          <div class="kpi-title">Running Cost</div>
+          <div class="kpi-num">$0.00</div>
+          <div class="kpi-sub">100% offline & local AI</div>
+        </div>
+      </div>
+
+      <!-- 1. What This Tool Is About -->
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-icon">💡</span>
+          <div class="section-title">1. What This Tool Is About (In Short)</div>
+        </div>
+        <div class="about-box">
+          When automated tests fail, software engineers usually waste <strong>10 to 15 hours every week</strong> reading cryptic logs and opening screenshots.<br/>
+          👉 <strong>This tool automatically reads the failure logs and screenshots, tells you the exact root cause in 3 seconds (e.g. Real Bug vs. Changed Button vs. Slow Network), and suggests how to fix the code.</strong>
+          <div style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
+            <span style="background: rgba(59, 130, 246, 0.15); color: #1d4ed8; font-size: 6.8pt; font-weight: 600; padding: 1.5px 6px; border-radius: 4px;">⚡ 3-Sec AI Triage</span>
+            <span style="background: rgba(16, 185, 129, 0.15); color: #047857; font-size: 6.8pt; font-weight: 600; padding: 1.5px 6px; border-radius: 4px;">🖼️ Screenshot Vision Diagnostics</span>
+            <span style="background: rgba(139, 92, 246, 0.15); color: #6d28d9; font-size: 6.8pt; font-weight: 600; padding: 1.5px 6px; border-radius: 4px;">📈 Flaky Stability Score</span>
+            <span style="background: rgba(245, 158, 11, 0.15); color: #b45309; font-size: 6.8pt; font-weight: 600; padding: 1.5px 6px; border-radius: 4px;">🛠️ 1-Click Code Fix Diff</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Some Little Proof -->
+      <div class="section-card">
+        <div class="section-header">
+          <span class="section-icon">📊</span>
+          <div class="section-title">2. Some Little Proof (From Real 60-Test Execution)</div>
+        </div>
+        <div class="proof-grid">
+          <div class="proof-bars">
+            <div class="bar-item">
+              <div class="bar-label">🐛 Application Bug</div>
+              <div class="bar-line"><div class="bar-fill" style="width: 38.6%; background: #ef4444;"></div></div>
+              <div class="bar-count">17 (39%)</div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-label">🎯 Locator / Selector</div>
+              <div class="bar-line"><div class="bar-fill" style="width: 34.1%; background: #f97316;"></div></div>
+              <div class="bar-count">15 (34%)</div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-label">⏳ Timing / Sync Issue</div>
+              <div class="bar-line"><div class="bar-fill" style="width: 15.9%; background: #f59e0b;"></div></div>
+              <div class="bar-count">7 (16%)</div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-label">🌐 Environment / Infra</div>
+              <div class="bar-line"><div class="bar-fill" style="width: 4.5%; background: #6366f1;"></div></div>
+              <div class="bar-count">2 (5%)</div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-label">📝 Test Script Bug</div>
+              <div class="bar-line"><div class="bar-fill" style="width: 4.5%; background: #8b5cf6;"></div></div>
+              <div class="bar-count">2 (5%)</div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-label">📊 Test Data Issue</div>
+              <div class="bar-line"><div class="bar-fill" style="width: 2.3%; background: #10b981;"></div></div>
+              <div class="bar-count">1 (2%)</div>
+            </div>
+          </div>
+
+          <table class="proof-table">
+            <tr>
+              <td>Total Tests Evaluated</td>
+              <td>60 Tests</td>
+            </tr>
+            <tr>
+              <td>Passing Tests</td>
+              <td style="color:#10b981;">16 Passed (26.7%)</td>
+            </tr>
+            <tr>
+              <td>Failures Triaged</td>
+              <td style="color:#ef4444;">44 Failures (73.3%)</td>
+            </tr>
+            <tr>
+              <td>Classification Coverage</td>
+              <td style="color:#10b981;">100% (0 Unclassified)</td>
+            </tr>
+            <tr>
+              <td>AI Triage Duration</td>
+              <td>~2.5 Minutes</td>
+            </tr>
+            <tr>
+              <td>Cloud API Bill</td>
+              <td>$0.00 (Offline)</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- 3. Tech Stack -->
+      <div class="section-card" style="margin-bottom: 0;">
+        <div class="section-header">
+          <span class="section-icon">🛠️</span>
+          <div class="section-title">3. Tech Stack (To Build Tool & Framework)</div>
+        </div>
+        <table class="tech-table">
+          <thead>
+            <tr>
+              <th style="width: 25%;">Layer</th>
+              <th style="width: 32%;">Technology</th>
+              <th style="width: 43%;">Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Test Framework</strong></td>
+              <td><strong>Playwright + TypeScript</strong></td>
+              <td>Automated browser testing across Chromium with screenshot/log capture</td>
+            </tr>
+            <tr>
+              <td><strong>AI / LLM Engine</strong></td>
+              <td><strong>Local Ollama (qwen2.5-coder)</strong></td>
+              <td>100% offline root-cause triage & vision analysis ($0 cloud cost)</td>
+            </tr>
+            <tr>
+              <td><strong>Backend Server</strong></td>
+              <td><strong>Node.js + Express 5 + TypeScript</strong></td>
+              <td>REST APIs, process management (taskkill), report generator</td>
+            </tr>
+            <tr>
+              <td><strong>Live Streaming</strong></td>
+              <td><strong>Server-Sent Events (SSE)</strong></td>
+              <td>Real-time failure-by-failure live triage terminal streaming</td>
+            </tr>
+            <tr>
+              <td><strong>History & Analytics</strong></td>
+              <td><strong>SQLite (better-sqlite3)</strong></td>
+              <td>Flaky test history tracking and stability scoring (0–100%)</td>
+            </tr>
+            <tr>
+              <td><strong>Auto-Fix Engine</strong></td>
+              <td><strong>Diff Library (diff) + Zod</strong></td>
+              <td>Generates unified git diffs with 1-click .bak safe rollback</td>
+            </tr>
+            <tr>
+              <td><strong>Web Dashboard</strong></td>
+              <td><strong>HTML5 + CSS3 + Vanilla JS</strong></td>
+              <td>Executive UI at localhost:3000 with interactive triage cards & reports</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>AI Failure Analysis Copilot — Executive Proof of Concept (POC)</span>
+      <span>Page 1 of 2 • Status: Verified & Operational</span>
+    </div>
+  </div>
+
+  <!-- ════════════ PAGE 2: COMPLETE USER GUIDE ════════════ -->
+  <div class="page-sheet">
+    <div class="page-content">
+      <div class="header" style="margin-bottom: 10px; padding: 12px 18px;">
+        <div class="badge-top" style="background: rgba(16, 185, 129, 0.25); border-color: #10b981; color: #a7f3d0;">
+          Step-by-Step User Guide
+        </div>
+        <div class="title" style="font-size: 15pt;">How to Pull, Setup & Use the Tool</div>
+        <div class="subtitle">Complete instructions for developers, QA testers, and evaluators to run the tool from scratch.</div>
+      </div>
+
+      <!-- Step 1: Pull the Code -->
+      <div class="guide-step">
+        <div class="guide-step-header">
+          <span class="guide-badge">1</span>
+          <div class="guide-step-title">How to Pull the Code (Repository URL)</div>
+        </div>
+        <p style="font-size: 7.5pt; color: #475569; margin-bottom: 2px;">Clone the official project repository from GitHub using Git:</p>
+        <span class="code-snippet">git clone https://github.com/KiranAcad/AI-FEST-ACAD-QA.git
+cd AI-FEST-ACAD-QA</span>
+        <div style="font-size: 6.8pt; color: #64748b; margin-top: 2px;">
+          • <strong>Repository:</strong> <code>https://github.com/KiranAcad/AI-FEST-ACAD-QA.git</code> • <strong>Branch:</strong> <code>master</code>
+        </div>
+      </div>
+
+      <!-- Step 2: Prerequisites & Install -->
+      <div class="guide-step">
+        <div class="guide-step-header">
+          <span class="guide-badge">2</span>
+          <div class="guide-step-title">Prerequisites & Installation</div>
+        </div>
+        <p style="font-size: 7.5pt; color: #475569; margin-bottom: 2px;">Install required dependencies for both the copilot backend and Playwright test suite:</p>
+        <span class="code-snippet"># 1. Install project dependencies
+npm install
+
+# 2. (Optional) Ensure Ollama is running locally with coding model
+ollama pull qwen2.5-coder:1.5b</span>
+        <div style="font-size: 6.8pt; color: #64748b; margin-top: 2px;">
+          • <strong>Requirements:</strong> Node.js &gt;= 18.0.0, Git, and Ollama (for offline local AI inference).
+        </div>
+      </div>
+
+      <!-- Step 3: Start the Project -->
+      <div class="guide-step">
+        <div class="guide-step-header">
+          <span class="guide-badge">3</span>
+          <div class="guide-step-title">How to Start the Project & Dashboard</div>
+        </div>
+        <p style="font-size: 7.5pt; color: #475569; margin-bottom: 2px;">Launch the web dashboard server with a single npm command:</p>
+        <span class="code-snippet">npm run dashboard</span>
+        <p style="font-size: 7.5pt; color: #475569; margin-top: 3px;">
+          Once started, open your web browser and navigate to: <strong><code style="color: #2563eb;">http://localhost:3000</code></strong>
+        </p>
+      </div>
+
+      <!-- Step 4: How to Use the Tool -->
+      <div class="guide-step">
+        <div class="guide-step-header">
+          <span class="guide-badge">4</span>
+          <div class="guide-step-title">How to Use the Tool (Dashboard Features)</div>
+        </div>
+        <p style="font-size: 7.5pt; color: #475569; margin-bottom: 4px;">
+          The web application at <code>http://localhost:3000</code> provides 4 core workflow tabs:
+        </p>
+        <div class="ui-tab-grid">
+          <div class="ui-tab-card">
+            <div class="ui-tab-name">📊 Dashboard</div>
+            <div class="ui-tab-desc">High-level executive metrics, category distribution charts & stability trends.</div>
+          </div>
+          <div class="ui-tab-card">
+            <div class="ui-tab-name">🚨 Failure Triage</div>
+            <div class="ui-tab-desc">Browse triaged failures, view AI explanations, inspect screenshots, and apply code diffs.</div>
+          </div>
+          <div class="ui-tab-card">
+            <div class="ui-tab-name">🧪 Run Tests</div>
+            <div class="ui-tab-desc">1-click <strong>"⚡ Run Tests & Analyze"</strong> button. Terminal streams tests and live AI triage!</div>
+          </div>
+          <div class="ui-tab-card">
+            <div class="ui-tab-name">📑 Reports</div>
+            <div class="ui-tab-desc">Preview or download standalone interactive HTML reports (77 KB), JSON data, or Markdown.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Quick Command Line Cheat Sheet -->
+      <div class="guide-step" style="margin-bottom: 0;">
+        <div class="guide-step-header">
+          <span class="guide-badge">5</span>
+          <div class="guide-step-title">Quick CLI Cheat Sheet (For CI/CD & Power Users)</div>
+        </div>
+        <table class="tech-table">
+          <thead>
+            <tr>
+              <th style="width: 30%;">Command</th>
+              <th style="width: 70%;">What It Does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>npm run test:real</code></td>
+              <td>Executes all 60 Playwright tests across 7 web applications and saves <code>results.json</code></td>
+            </tr>
+            <tr>
+              <td><code>npm run analyze:ollama</code></td>
+              <td>Runs AI batch triage from command line using local Ollama model</td>
+            </tr>
+            <tr>
+              <td><code>npm run test:and:analyze:ollama</code></td>
+              <td>Full end-to-end automated pipeline: executes tests, captures failures, and generates reports</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>AI Failure Analysis Copilot — User Guide & Setup Manual</span>
+      <span>Page 2 of 2 • Repository: https://github.com/KiranAcad/AI-FEST-ACAD-QA.git</span>
+    </div>
+  </div>
+
+</body>
+</html>

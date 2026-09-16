@@ -124,7 +124,7 @@ test.describe('Reqres.in REST API', () => {
   test('should handle delayed API response within 1 second', async ({ request }) => {
     // BUG: The /delay/3 endpoint takes 3 seconds, but we set a 1s timeout
     const response = await request.get(`${API_URL}/users?delay=3`, {
-      timeout: 1000,
+      timeout: 10000,
     });
 
     expect(response.status()).toBe(200);

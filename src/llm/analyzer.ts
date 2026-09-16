@@ -100,7 +100,7 @@ export function createAnalyzer(config: AnalyzerConfig) {
   if (config.provider === 'ollama') {
     return createOllamaAnalyzer({
       baseUrl: config.ollamaUrl,
-      model: config.model || 'qwen3:8b',
+      model: config.model || process.env.OLLAMA_MODEL || 'qwen3:1.7b',
       maxRetries: config.maxRetries,
     });
   }

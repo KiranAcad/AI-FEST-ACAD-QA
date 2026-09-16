@@ -31,3 +31,5 @@ real-tests/playwright-report/
 # SQLite history database
 data/
 
+# Backup files from auto-fix
+*.bak

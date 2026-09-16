@@ -123,6 +123,6 @@ test.describe('DemoQA - Forms & Widgets', () => {
     await slider.fill('75');
 
     // BUG: Asserting the display shows "70" but we set it to 75
-    await expect(page.locator('#sliderValue')).toHaveAttribute('value', '70');
+    await expect(page.locator('#sliderValue')).toHaveAttribute('value', '75');
   });
 });

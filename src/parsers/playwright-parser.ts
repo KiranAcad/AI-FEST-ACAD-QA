@@ -9,6 +9,7 @@
  */
 
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { ParsedFailure } from '../types.js';
 
 /**
@@ -35,6 +36,11 @@ interface PlaywrightError {
   message?: string;
   stack?: string;
   value?: string;
+  location?: {
+    file: string;
+    line: number;
+    column: number;
+  };
 }
 
 interface PlaywrightTestResult {
@@ -102,6 +108,8 @@ export async function parsePlaywrightResults(filePath: string): Promise<{
   const failures: ParsedFailure[] = [];
   let totalTests = 0;
 
+  const rootDir = (report.config?.rootDir as string) || undefined;
+
   // Recursively walk the suite hierarchy
   function walkSuite(suite: PlaywrightSuite, parentSuiteName: string): void {
     const currentSuiteName = parentSuiteName
@@ -119,7 +127,7 @@ export async function parsePlaywrightResults(filePath: string): Promise<{
             continue;
           }
 
-          const failure = extractFailure(spec, test, currentSuiteName);
+          const failure = extractFailure(spec, test, currentSuiteName, rootDir);
           if (failure) {
             failures.push(failure);
           }
@@ -148,7 +156,8 @@ export async function parsePlaywrightResults(filePath: string): Promise<{
 function extractFailure(
   spec: PlaywrightSpec,
   test: PlaywrightTest,
-  suiteName: string
+  suiteName: string,
+  rootDir?: string
 ): ParsedFailure | null {
   // Use the last result (final retry attempt)
   const result = test.results[test.results.length - 1];
@@ -164,17 +173,35 @@ function extractFailure(
   const screenshotPath = findAttachment(result.attachments, 'screenshot');
   const videoPath = findAttachment(result.attachments, 'video');
 
+  // Resolve exact file path and line from error location or rootDir
+  let resolvedFilePath = spec.file;
+  let errorLine = spec.line || 1;
+  let errorColumn = spec.column;
+
+  if (result.errors && result.errors.length > 0) {
+    const errorWithLoc = result.errors.find((e) => e.location?.file);
+    if (errorWithLoc?.location) {
+      resolvedFilePath = errorWithLoc.location.file;
+      errorLine = errorWithLoc.location.line;
+      errorColumn = errorWithLoc.location.column;
+    }
+  }
+
+  if (rootDir && (!resolvedFilePath || !path.isAbsolute(resolvedFilePath))) {
+    resolvedFilePath = path.resolve(rootDir, resolvedFilePath || spec.file);
+  }
+
   // Extract error location from spec or stack trace
   const errorLocation = {
-    file: spec.file,
-    line: spec.line || 1,
-    column: spec.column,
+    file: resolvedFilePath,
+    line: errorLine,
+    column: errorColumn,
   };
 
   return {
     testName: suiteName ? `${suiteName} > ${spec.title}` : spec.title,
     suiteName: suiteName || 'Root',
-    filePath: spec.file,
+    filePath: resolvedFilePath,
     errorMessage,
     stackTrace: trimStackTrace(stackTrace),
     logLines: logLines.slice(-20), // Keep last 20 lines

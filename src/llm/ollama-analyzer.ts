@@ -54,7 +54,7 @@ export interface OllamaConfig {
 
 export function createOllamaAnalyzer(config: OllamaConfig = {}) {
   const baseUrl = (config.baseUrl || process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\/+$/, '');
-  const model = config.model || process.env.OLLAMA_MODEL || 'qwen3:8b';
+  const model = config.model || process.env.OLLAMA_MODEL || 'qwen3:1.7b';
   const maxRetries = config.maxRetries || 2;
 
 const LOCAL_SYSTEM_PROMPT = `You are a QA failure triage specialist. Classify the test failure into exactly one category:
@@ -97,9 +97,14 @@ Output the JSON classification now:`;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
+        // Set a 35-second timeout to prevent hanging
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 35_000);
+
         const response = await fetch(`${baseUrl}/api/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
           body: JSON.stringify({
             model,
             messages: [
@@ -108,13 +113,17 @@ Output the JSON classification now:`;
             ],
             format: 'json',
             stream: false,
+            think: false, // Disable thinking/reasoning mode for faster inference
+            keep_alive: '15m', // Keep model hot in RAM between requests
             options: {
               temperature: 0.1,
-              num_predict: 400,
-              num_ctx: 1024,
+              num_predict: 160,
+              num_ctx: 2048,
             },
           }),
         });
+
+        clearTimeout(timeout);
 
         if (!response.ok) {
           const errText = await response.text();

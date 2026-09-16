@@ -53,6 +53,15 @@ program
     }
   });
 
+program
+  .command('dashboard')
+  .description('Start live interactive Web UI Dashboard immediately on port 3000')
+  .option('-p, --port <port>', 'Port number', '3000')
+  .action((options) => {
+    const port = parseInt(options.port, 10) || 3000;
+    startDashboardServer(port);
+  });
+
 async function runAnalysis(options: {
   input?: string;
   output?: string;
@@ -92,7 +101,7 @@ async function runAnalysis(options: {
 
   let model = options.model;
   if (!model) {
-    model = provider === 'ollama' ? (process.env.OLLAMA_MODEL || 'qwen3:8b') : (process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514');
+    model = provider === 'ollama' ? (process.env.OLLAMA_MODEL || 'qwen3:1.7b') : (process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514');
   }
 
   // ─── Banner ─────────────────────────────────────────────────────────
@@ -142,6 +151,7 @@ async function runAnalysis(options: {
       model,
       ollamaUrl: options.ollamaUrl,
       dryRun: isDryRun,
+      vision: options.vision,
     },
     inputPath,
     totalTests

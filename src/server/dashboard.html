@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Failure Analysis Copilot — Dashboard</title>
+  <title>AI Failure Analysis Copilot — Executive Triage Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-body: #06080d;
       --bg-sidebar: #0c0f18;
-      --bg-card: rgba(17, 22, 36, 0.8);
-      --bg-card-hover: rgba(23, 30, 48, 0.9);
+      --bg-card: rgba(17, 22, 36, 0.85);
+      --bg-card-hover: rgba(24, 32, 52, 0.95);
       --bg-input: rgba(15, 19, 30, 0.9);
-      --border: rgba(255,255,255,0.06);
-      --border-active: rgba(99,102,241,0.5);
+      --border: rgba(255,255,255,0.07);
+      --border-active: rgba(99,102,241,0.6);
       --primary: #6366f1;
       --primary-soft: rgba(99,102,241,0.15);
       --primary-text: #a5b4fc;
@@ -26,26 +26,27 @@
       --purple: #a855f7;
       --purple-soft: rgba(168,85,247,0.12);
       --cyan: #06b6d4;
+      --cyan-soft: rgba(6,182,212,0.15);
       --text: #f1f5f9;
       --text-secondary: #94a3b8;
       --text-dim: #64748b;
       --radius: 12px;
       --radius-lg: 16px;
       --shadow: 0 4px 24px rgba(0,0,0,0.4);
-      --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+      --transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; overflow: hidden; }
     body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-body); color: var(--text); display: flex; }
 
-    /* ── Scrollbar ─────── */
-    ::-webkit-scrollbar { width: 6px; }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
 
-    /* ── Sidebar ─────── */
+    /* Sidebar */
     .sidebar {
       width: 260px; min-width: 260px; height: 100vh;
       background: var(--bg-sidebar);
@@ -55,97 +56,186 @@
       z-index: 10;
     }
     .sidebar-logo {
-      display: flex; align-items: center; gap: 0.7rem;
+      display: flex; align-items: center; gap: 0.75rem;
       padding: 0 0.5rem 1.8rem; border-bottom: 1px solid var(--border); margin-bottom: 1.2rem;
     }
     .sidebar-logo .logo-icon {
-      width: 36px; height: 36px; border-radius: 10px;
+      width: 38px; height: 38px; border-radius: 10px;
       background: linear-gradient(135deg, var(--primary), #8b5cf6);
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem; flex-shrink: 0;
+      font-size: 1.2rem; flex-shrink: 0;
+      box-shadow: 0 0 16px rgba(99,102,241,0.4);
     }
-    .sidebar-logo h1 { font-size: 0.95rem; font-weight: 700; line-height: 1.3; color: #fff; }
+    .sidebar-logo h1 { font-size: 0.98rem; font-weight: 700; line-height: 1.3; color: #fff; }
     .sidebar-logo h1 span { font-size: 0.72rem; font-weight: 400; color: var(--text-dim); display: block; }
 
     .nav-section { font-size: 0.7rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; padding: 0.8rem 0.5rem 0.5rem; }
     .nav-item {
       display: flex; align-items: center; gap: 0.65rem;
-      padding: 0.6rem 0.75rem; border-radius: 8px;
+      padding: 0.65rem 0.85rem; border-radius: 8px;
       font-size: 0.88rem; font-weight: 500; color: var(--text-secondary);
-      cursor: pointer; transition: var(--transition); margin-bottom: 2px;
+      cursor: pointer; transition: var(--transition); margin-bottom: 3px;
       text-decoration: none;
     }
-    .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text); }
     .nav-item.active { background: var(--primary-soft); color: var(--primary-text); font-weight: 600; }
-    .nav-item .nav-icon { font-size: 1rem; width: 1.3rem; text-align: center; }
-    .nav-badge { margin-left: auto; background: var(--red-soft); color: var(--red); font-size: 0.7rem; padding: 0.15rem 0.45rem; border-radius: 6px; font-weight: 700; }
+    .nav-item .nav-icon { font-size: 1.05rem; width: 1.3rem; text-align: center; }
+    .nav-badge { margin-left: auto; background: var(--red-soft); color: var(--red); font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: 6px; font-weight: 700; }
+    .nav-badge-green { background: var(--green-soft); color: var(--green); }
 
     .sidebar-footer { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 0.4rem; animation: pulse 2s infinite; }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-    /* ── Main Content ─────── */
+    /* Main Content */
     .main { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
     .topbar {
       display: flex; align-items: center; justify-content: space-between;
       padding: 1rem 2rem; border-bottom: 1px solid var(--border);
-      background: rgba(12,15,24,0.6); backdrop-filter: blur(12px);
+      background: rgba(12,15,24,0.7); backdrop-filter: blur(12px);
     }
     .topbar h2 { font-size: 1.3rem; font-weight: 700; }
     .topbar-actions { display: flex; align-items: center; gap: 0.75rem; }
 
     .btn {
       display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.55rem 1.2rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+      padding: 0.55rem 1.15rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
       cursor: pointer; transition: var(--transition); border: none; font-family: inherit;
+      text-decoration: none;
     }
     .btn-primary { background: linear-gradient(135deg, var(--primary), #7c3aed); color: #fff; }
     .btn-primary:hover { box-shadow: 0 4px 16px rgba(99,102,241,0.4); transform: translateY(-1px); }
     .btn-success { background: linear-gradient(135deg, var(--green), #059669); color: #fff; }
     .btn-success:hover { box-shadow: 0 4px 16px rgba(16,185,129,0.3); transform: translateY(-1px); }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
-    .btn-outline:hover { border-color: var(--primary); color: var(--primary-text); }
-    .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.78rem; }
     .btn-danger { background: linear-gradient(135deg, var(--red), #dc2626); color: #fff; }
+    .btn-danger:hover { box-shadow: 0 4px 16px rgba(239,68,68,0.3); transform: translateY(-1px); }
+    .btn-warning { background: linear-gradient(135deg, var(--amber), #d97706); color: #fff; }
+    .btn-warning:hover { box-shadow: 0 4px 16px rgba(245,158,11,0.3); transform: translateY(-1px); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary-text); background: rgba(255,255,255,0.02); }
+    .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
+    .btn-jira { background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); color: #93c5fd; }
+    .btn-jira:hover { background: rgba(59,130,246,0.25); color: #fff; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 
     .content { flex: 1; overflow-y: auto; padding: 2rem; }
 
-    /* ── Pages ─────── */
+    /* Pages */
     .page { display: none; }
     .page.active { display: block; }
 
-    /* ── Metric Cards ─────── */
+    /* Executive ROI Banner */
+    .roi-banner {
+      background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(16,185,129,0.08) 50%, rgba(168,85,247,0.1) 100%);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: var(--radius-lg);
+      padding: 1.6rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .roi-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.75rem;
+    }
+    .roi-title {
+      font-size: 1.15rem; font-weight: 800;
+      background: linear-gradient(90deg, #fff, var(--primary-text));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .roi-badge {
+      background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3);
+      color: var(--green); font-size: 0.75rem; font-weight: 700;
+      padding: 0.3rem 0.75rem; border-radius: 999px;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .roi-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+      margin-bottom: 1.2rem;
+    }
+    .roi-item {
+      background: rgba(6,8,13,0.5); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem 1.2rem;
+    }
+    .roi-value { font-size: 1.8rem; font-weight: 800; line-height: 1.1; margin-bottom: 0.35rem; }
+    .roi-desc { font-size: 0.76rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .roi-footer {
+      display: flex; gap: 1rem; align-items: center; justify-content: flex-end;
+      padding-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* Metric Cards */
     .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin-bottom: 2rem; }
     .metric-card {
       background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
       padding: 1.4rem 1.5rem; transition: var(--transition);
     }
-    .metric-card:hover { border-color: rgba(255,255,255,0.12); }
+    .metric-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
     .metric-label { font-size: 0.78rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 0.5rem; }
     .metric-val { font-size: 2.2rem; font-weight: 800; line-height: 1; }
     .metric-sub { font-size: 0.78rem; color: var(--text-dim); margin-top: 0.4rem; }
 
-    /* ── Distribution Chart ─── */
-    .chart-section { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    /* Distribution Chart */
+    .chart-section { display: grid; grid-template-columns: 1.25fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
     .chart-card {
       background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
       padding: 1.5rem;
     }
-    .chart-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 1.2rem; }
-    .bar-row { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.7rem; }
-    .bar-label { font-size: 0.8rem; color: var(--text-secondary); width: 180px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .bar-track { flex: 1; height: 22px; background: rgba(255,255,255,0.04); border-radius: 6px; overflow: hidden; position: relative; }
-    .bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; display: flex; align-items: center; padding-left: 0.5rem; }
-    .bar-fill span { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.9); }
+    .chart-card h3 { font-size: 0.98rem; font-weight: 700; margin-bottom: 1.2rem; display: flex; justify-content: space-between; align-items: center; }
+    .bar-row { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.75rem; }
+    .bar-label { font-size: 0.82rem; color: var(--text-secondary); width: 190px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-track { flex: 1; height: 24px; background: rgba(255,255,255,0.04); border-radius: 6px; overflow: hidden; position: relative; }
+    .bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; display: flex; align-items: center; padding-left: 0.6rem; }
+    .bar-fill span { font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.95); text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
 
-    /* ── Failure Cards ─────── */
+    /* Failure Triage Toolbar */
+    .triage-toolbar {
+      display: flex; gap: 1rem; align-items: center; justify-content: space-between;
+      margin-bottom: 1.2rem; flex-wrap: wrap;
+    }
+    .search-box {
+      position: relative; flex: 1; min-width: 280px; max-width: 500px;
+    }
+    .search-input {
+      width: 100%; padding: 0.65rem 2.2rem 0.65rem 2.4rem;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 0.88rem; outline: none;
+      transition: var(--transition);
+    }
+    .search-input:focus { border-color: var(--border-active); box-shadow: 0 0 12px rgba(99,102,241,0.25); }
+    .search-icon { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: var(--text-dim); }
+    .search-clear {
+      position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%);
+      font-size: 0.8rem; color: var(--text-dim); cursor: pointer; display: none;
+    }
+    .search-clear:hover { color: var(--text); }
+    .triage-actions { display: flex; gap: 0.75rem; align-items: center; }
+
+    /* Filter Pills */
+    .filter-pills { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.4rem; }
+    .filter-pill {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.35rem 0.8rem; border-radius: 999px;
+      font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      cursor: pointer; transition: var(--transition); white-space: nowrap;
+    }
+    .filter-pill:hover { background: rgba(255,255,255,0.07); color: var(--text); border-color: rgba(255,255,255,0.15); }
+    .filter-pill.active { background: var(--primary-soft); color: var(--primary-text); border-color: var(--primary); }
+    .filter-pill .pill-count {
+      font-size: 0.7rem; padding: 0.05rem 0.4rem; border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    /* Failure Cards */
     .failures-list { display: flex; flex-direction: column; gap: 1rem; }
     .failure-card {
       background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
       overflow: hidden; transition: var(--transition);
     }
-    .failure-card:hover { border-color: rgba(255,255,255,0.1); }
+    .failure-card:hover { border-color: rgba(255,255,255,0.12); box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
     .failure-card-header {
       padding: 1.2rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
       cursor: pointer; user-select: none;
@@ -182,11 +272,29 @@
     .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
     .detail-box {
       background: rgba(6,8,13,0.6); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 1rem 1.2rem;
+      border-radius: var(--radius); padding: 1.1rem 1.3rem;
     }
-    .detail-box h4 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); margin-bottom: 0.6rem; font-weight: 600; }
+    .detail-box h4 {
+      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-dim); margin-bottom: 0.6rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: space-between;
+    }
     .detail-box p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
     .detail-box.full { grid-column: 1 / -1; }
+
+    /* Screenshot Box */
+    .screenshot-box {
+      display: flex; gap: 1.2rem; align-items: center; background: rgba(2,3,8,0.8);
+      border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; margin-top: 0.6rem;
+    }
+    .screenshot-thumb {
+      width: 140px; height: 85px; object-fit: cover; border-radius: 6px;
+      border: 1px solid var(--border); cursor: pointer; transition: var(--transition);
+    }
+    .screenshot-thumb:hover { transform: scale(1.04); border-color: var(--primary); }
+    .screenshot-info { flex: 1; }
+    .screenshot-info h5 { font-size: 0.85rem; font-weight: 600; color: #fff; margin-bottom: 0.25rem; }
+    .screenshot-info p { font-size: 0.78rem; color: var(--text-dim); line-height: 1.4; margin-bottom: 0.6rem; }
 
     .diff-block {
       background: #020308; border: 1px solid var(--border); border-radius: 8px;
@@ -204,7 +312,31 @@
       white-space: pre-wrap; word-break: break-all;
     }
 
-    /* ── Flaky Table ─────── */
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+      display: none; align-items: center; justify-content: center; z-index: 1000; padding: 2rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-content {
+      background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+    }
+    .modal-header h3 { font-size: 1rem; font-weight: 700; color: #fff; }
+    .modal-close {
+      background: none; border: none; font-size: 1.3rem; color: var(--text-dim);
+      cursor: pointer; padding: 0.2rem 0.5rem;
+    }
+    .modal-close:hover { color: #fff; }
+    .modal-body { padding: 1rem; overflow: auto; text-align: center; }
+    .modal-img { max-width: 100%; max-height: 75vh; border-radius: 8px; border: 1px solid var(--border); }
+
+    /* Flaky Table */
     .table-wrap {
       background: var(--bg-card); border: 1px solid var(--border);
       border-radius: var(--radius-lg); overflow: hidden;
@@ -222,7 +354,7 @@
     .flaky-bar { width: 80px; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 0.5rem; }
     .flaky-bar-fill { height: 100%; border-radius: 3px; }
 
-    /* ── Run Panel ─── */
+    /* Run Panel */
     .run-panel {
       background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
       padding: 2rem; max-width: 700px;
@@ -242,83 +374,164 @@
     .form-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: var(--text-secondary); cursor: pointer; }
     .form-check input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
 
-    /* ── Console output ─── */
+    /* Console output */
     .console-output {
       background: #020308; border: 1px solid var(--border); border-radius: 8px;
       padding: 1rem; font-family: 'Fira Code', monospace; font-size: 0.78rem;
-      line-height: 1.7; color: var(--green); max-height: 350px; overflow-y: auto;
+      line-height: 1.7; color: var(--green); max-height: 450px; overflow-y: auto;
       white-space: pre-wrap; margin-top: 1rem; display: none;
     }
     .console-output.visible { display: block; }
-
-    /* ── Toast ─── */
-    .toast {
-      position: fixed; bottom: 2rem; right: 2rem; padding: 0.8rem 1.5rem;
-      border-radius: 10px; font-size: 0.88rem; font-weight: 600; color: #fff;
-      z-index: 9999; transform: translateY(100px); opacity: 0; transition: all 0.3s ease;
-      box-shadow: var(--shadow);
+    .spinner {
+      display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 0.4rem;
     }
-    .toast.show { transform: translateY(0); opacity: 1; }
-    .toast.success { background: var(--green); }
-    .toast.error { background: var(--red); }
-    .toast.info { background: var(--primary); }
-
-    /* ── Empty state ─── */
-    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-dim); }
-    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
-    .empty-state p { font-size: 0.95rem; }
-
-    /* ── Loading spinner ─── */
-    .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block; vertical-align: middle; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    @media (max-width: 1100px) {
-      .metrics-row { grid-template-columns: repeat(2, 1fr); }
-      .chart-section { grid-template-columns: 1fr; }
-      .detail-grid { grid-template-columns: 1fr; }
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      background: #111827; border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.9rem 1.5rem; font-size: 0.88rem; font-weight: 500;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5); transform: translateY(100px);
+      opacity: 0; transition: var(--transition); z-index: 9999;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: var(--green); color: var(--green); }
+    .toast.error { border-color: var(--red); color: var(--red); }
+    .toast.info { border-color: var(--primary); color: var(--primary-text); }
+
+    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-dim); }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+
+    /* Reports Grid */
+    .reports-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.2rem; }
+    .report-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 1.4rem; transition: var(--transition); cursor: pointer;
+    }
+    .report-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .report-card-icon { font-size: 2rem; margin-bottom: 0.6rem; }
+    .report-card-name { font-size: 0.92rem; font-weight: 700; color: #fff; margin-bottom: 0.3rem; word-break: break-all; }
+    .report-card-meta { font-size: 0.78rem; color: var(--text-dim); display: flex; gap: 1rem; align-items: center; margin-bottom: 0.8rem; }
+    .report-card-actions { display: flex; gap: 0.5rem; }
+    .report-ext-badge {
+      display: inline-block; padding: 0.15rem 0.55rem; border-radius: 4px;
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    }
+    .ext-html { background: rgba(59,130,246,0.15); color: #93c5fd; }
+    .ext-json { background: rgba(168,85,247,0.15); color: #c4b5fd; }
+    .ext-md { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+
+    /* Test Runner Panel */
+    .test-runner-panel {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 2rem; max-width: 900px;
+    }
+    .test-runner-panel h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .test-runner-panel .desc { color: var(--text-dim); font-size: 0.88rem; margin-bottom: 1.5rem; }
+    .test-runner-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+    .test-status-indicator {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.4rem 1rem; border-radius: 999px; font-size: 0.82rem; font-weight: 600;
+    }
+    .test-status-idle { background: rgba(100,116,139,0.15); color: var(--text-dim); }
+    .test-status-running { background: rgba(99,102,241,0.15); color: var(--primary-text); }
+    .test-status-pass { background: var(--green-soft); color: var(--green); }
+    .test-status-fail { background: var(--red-soft); color: var(--red); }
+
+    /* Workflow steps */
+    .workflow-steps {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;
+    }
+    .workflow-step {
+      background: rgba(6,8,13,0.5); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.2rem; text-align: center; transition: var(--transition); cursor: pointer;
+      position: relative;
+    }
+    .workflow-step:hover { border-color: rgba(255,255,255,0.15); }
+    .workflow-step.active { border-color: var(--primary); background: var(--primary-soft); }
+    .workflow-step.completed { border-color: var(--green); }
+    .workflow-step .step-icon { font-size: 1.6rem; margin-bottom: 0.4rem; }
+    .workflow-step .step-title { font-size: 0.82rem; font-weight: 700; margin-bottom: 0.2rem; }
+    .workflow-step .step-desc { font-size: 0.72rem; color: var(--text-dim); }
+    .workflow-step .step-arrow {
+      position: absolute; right: -0.7rem; top: 50%; transform: translateY(-50%);
+      color: var(--text-dim); font-size: 0.8rem; z-index: 1;
+    }
+    .workflow-step:last-child .step-arrow { display: none; }
+
+    /* Progress bar */
+    .progress-bar-container {
+      width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px;
+      overflow: hidden; margin-bottom: 1rem; display: none;
+    }
+    .progress-bar-container.visible { display: block; }
+    .progress-bar-fill {
+      height: 100%; border-radius: 3px; transition: width 0.5s ease;
+      background: linear-gradient(90deg, var(--primary), var(--cyan));
+    }
+    .progress-bar-indeterminate {
+      width: 30%; animation: indeterminate 1.5s ease-in-out infinite;
+      background: linear-gradient(90deg, var(--primary), var(--cyan));
+    }
+    @keyframes indeterminate {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(400%); }
     }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
+  <!-- ─── Sidebar ──────────────────────────────────────────────────────── -->
+  <div class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-icon">🤖</div>
-      <h1>AI Copilot <span>Failure Analysis</span></h1>
+      <h1>AI Failure Copilot <span>QA Root Cause Triage</span></h1>
     </div>
 
-    <div class="nav-section">Overview</div>
-    <a class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
-      <span class="nav-icon">📊</span> Dashboard
-    </a>
-    <a class="nav-item" data-page="failures" onclick="showPage('failures')">
-      <span class="nav-icon">🚨</span> Failure Triage <span class="nav-badge" id="navFailureCount">0</span>
-    </a>
-
-    <div class="nav-section">Intelligence</div>
-    <a class="nav-item" data-page="flaky" onclick="showPage('flaky')">
+    <div class="nav-section">Triage Views</div>
+    <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+      <span class="nav-icon">📊</span> Executive Dashboard
+    </div>
+    <div class="nav-item" data-page="failures" onclick="showPage('failures')">
+      <span class="nav-icon">🎯</span> Failure Triage
+      <span class="nav-badge" id="navFailureCount">—</span>
+    </div>
+    <div class="nav-item" data-page="flaky" onclick="showPage('flaky')">
       <span class="nav-icon">📈</span> Flaky Analytics
-    </a>
+    </div>
 
-    <div class="nav-section">Actions</div>
-    <a class="nav-item" data-page="run" onclick="showPage('run')">
-      <span class="nav-icon">▶️</span> Run Analysis
-    </a>
+    <div class="nav-section" style="margin-top: 1rem;">Actions</div>
+    <div class="nav-item" data-page="tests" onclick="showPage('tests')">
+      <span class="nav-icon">🧪</span> Run Tests
+      <span class="nav-badge nav-badge-green" id="navTestStatus" style="display:none;">●</span>
+    </div>
+    <div class="nav-item" data-page="run" onclick="showPage('run')">
+      <span class="nav-icon">▶</span> Run Analysis
+    </div>
+    <div class="nav-item" data-page="reports" onclick="showPage('reports')">
+      <span class="nav-icon">📑</span> Reports
+    </div>
 
     <div class="sidebar-footer">
-      <div style="font-size: 0.8rem; color: var(--text-dim);"><span class="status-dot"></span> Server Active</div>
-      <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.3rem;">v1.0 • Ollama / Claude</div>
+      <div style="font-size: 0.78rem; color: var(--text-dim);">
+        <span class="status-dot"></span> Ollama / Claude Active
+      </div>
+      <div style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.3rem;">
+        v0.1.0 • Playwright AI Agent
+      </div>
     </div>
-  </aside>
+  </div>
 
-  <!-- Main Content -->
+  <!-- ─── Main Content ─────────────────────────────────────────────────── -->
   <div class="main">
-    <!-- Top bar -->
     <div class="topbar">
-      <h2 id="pageTitle">Dashboard</h2>
+      <h2 id="pageTitle">Executive Dashboard</h2>
       <div class="topbar-actions">
+        <button class="btn btn-outline btn-sm" onclick="exportExecutiveDigest()">📄 Copy Executive Summary</button>
         <button class="btn btn-outline btn-sm" onclick="refreshData()">↻ Refresh</button>
+        <button class="btn btn-outline btn-sm" style="border-color: rgba(239, 68, 68, 0.4); color: #f87171;" onclick="clearDashboard()" title="Clear previous test results and reset dashboard">🧹 Clear Dashboard</button>
         <button class="btn btn-primary btn-sm" onclick="showPage('run')">▶ Run Analysis</button>
       </div>
     </div>
@@ -327,6 +540,60 @@
 
       <!-- ═══ Dashboard Page ═══ -->
       <div class="page active" id="page-dashboard">
+        
+        <!-- Workflow Overview -->
+        <div class="workflow-steps">
+          <div class="workflow-step" onclick="showPage('tests')">
+            <div class="step-icon">🧪</div>
+            <div class="step-title">1. Run Tests</div>
+            <div class="step-desc">Execute Playwright suite</div>
+            <span class="step-arrow">→</span>
+          </div>
+          <div class="workflow-step" onclick="showPage('run')">
+            <div class="step-icon">🤖</div>
+            <div class="step-title">2. AI Analysis</div>
+            <div class="step-desc">Root cause triage</div>
+            <span class="step-arrow">→</span>
+          </div>
+          <div class="workflow-step" onclick="showPage('failures')">
+            <div class="step-icon">🔧</div>
+            <div class="step-title">3. Review & Fix</div>
+            <div class="step-desc">Apply self-healing patches</div>
+            <span class="step-arrow">→</span>
+          </div>
+          <div class="workflow-step" onclick="showPage('reports')">
+            <div class="step-icon">📑</div>
+            <div class="step-title">4. Reports</div>
+            <div class="step-desc">Export & share</div>
+          </div>
+        </div>
+
+        <!-- Executive ROI Banner -->
+        <div class="roi-banner">
+          <div class="roi-header">
+            <div class="roi-title">⚡ Executive Business Impact & Engineering ROI</div>
+            <div class="roi-badge">🔒 100% Local Inference • Zero Cloud API Costs</div>
+          </div>
+          <div class="roi-grid">
+            <div class="roi-item">
+              <div class="roi-value" id="roiTimeSaved" style="color: var(--primary-text);">— hrs</div>
+              <div class="roi-desc">Manual Triage Saved (~10m/failure)</div>
+            </div>
+            <div class="roi-item">
+              <div class="roi-value" id="roiFixRate" style="color: var(--cyan);">—%</div>
+              <div class="roi-desc">Self-Healing Patch Coverage</div>
+            </div>
+            <div class="roi-item">
+              <div class="roi-value" id="roiSpeed" style="color: var(--amber);">< 3 sec</div>
+              <div class="roi-desc">Avg AI Triage Speed / Failure</div>
+            </div>
+          </div>
+          <div class="roi-footer">
+            <button class="btn btn-outline btn-sm" onclick="exportExecutiveDigest()">📋 Copy Executive Digest</button>
+            <button class="btn btn-primary btn-sm" onclick="showPage('failures')">🔍 Explore Triaged Failures</button>
+          </div>
+        </div>
+
         <div class="metrics-row">
           <div class="metric-card">
             <div class="metric-label">Total Tests</div>
@@ -352,11 +619,11 @@
 
         <div class="chart-section">
           <div class="chart-card">
-            <h3>🎯 Root Cause Distribution</h3>
+            <h3>🎯 Root Cause Taxonomy Distribution</h3>
             <div id="distChart"></div>
           </div>
           <div class="chart-card">
-            <h3>🔥 Top Failures</h3>
+            <h3>🔥 Priority Failures Requiring Review</h3>
             <div id="topFailures"></div>
           </div>
         </div>
@@ -364,16 +631,26 @@
 
       <!-- ═══ Failures Page ═══ -->
       <div class="page" id="page-failures">
-        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem;">
-          <span style="font-size: 0.85rem; color: var(--text-dim);">Filter:</span>
-          <button class="btn btn-outline btn-sm filter-btn active" data-filter="all" onclick="filterFailures('all')">All</button>
-          <button class="btn btn-outline btn-sm filter-btn" data-filter="Locator/Selector Issue" onclick="filterFailures('Locator/Selector Issue')">🎯 Locator</button>
-          <button class="btn btn-outline btn-sm filter-btn" data-filter="Timing/Sync Issue" onclick="filterFailures('Timing/Sync Issue')">⏱️ Timing</button>
-          <button class="btn btn-outline btn-sm filter-btn" data-filter="Environment/Infra Issue" onclick="filterFailures('Environment/Infra Issue')">🌐 Infra</button>
-          <button class="btn btn-outline btn-sm filter-btn" data-filter="Test Data Issue" onclick="filterFailures('Test Data Issue')">📦 Data</button>
-          <button class="btn btn-outline btn-sm filter-btn" data-filter="Application Bug" onclick="filterFailures('Application Bug')">🐛 App Bug</button>
-          <button class="btn btn-outline btn-sm filter-btn" data-filter="Test Script Bug" onclick="filterFailures('Test Script Bug')">📝 Script</button>
+        <!-- Toolbar: Search & Bulk Action -->
+        <div class="triage-toolbar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="failureSearch" class="search-input" placeholder="Search by test name, error message, locator, or spec file..." oninput="onSearchInput(this.value)" />
+            <span class="search-clear" id="searchClear" onclick="clearSearch()">✕</span>
+          </div>
+          <div class="triage-actions">
+            <button class="btn btn-success btn-sm" id="btnApplyAll" onclick="applyAllFixes()">⚡ Apply All Fixes (<span id="fixableCount">0</span>)</button>
+            <button class="btn btn-warning btn-sm" id="btnUndoFixes" onclick="undoAllFixes()">↩ Undo All Fixes</button>
+            <button class="btn btn-outline btn-sm" onclick="copyTriageSlackDigest()">💬 Copy Slack Digest</button>
+          </div>
         </div>
+
+        <!-- Filter Pills -->
+        <div class="filter-pills" id="filterPills">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Failure Cards List -->
         <div class="failures-list" id="failuresList"></div>
       </div>
 
@@ -385,6 +662,50 @@
         <div class="table-wrap" id="flakyTable"></div>
       </div>
 
+      <!-- ═══ Run Tests Page ═══ -->
+      <div class="page" id="page-tests">
+        <div class="test-runner-panel">
+          <h3>🧪 Run Playwright Tests</h3>
+          <p class="desc">Execute the Playwright test suite directly from the browser. Live console output streams below in real-time.</p>
+
+          <div class="test-runner-actions">
+            <button class="btn btn-primary" id="btnRunTests" onclick="triggerTestRun()">
+              🚀 Run All Tests
+            </button>
+            <button class="btn btn-success" id="btnRunTestsAndAnalyzeTestsTab" onclick="triggerRunTestsAndAnalyze()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+              ⚡ Run Tests & Analyze (1-Click)
+            </button>
+            <button class="btn btn-danger btn-sm" id="btnStopTests" onclick="stopTestRun()" style="display:none;">
+              ⏹ Stop Tests
+            </button>
+            <button class="btn btn-outline btn-sm" style="border-color: rgba(239, 68, 68, 0.4); color: #f87171;" onclick="clearDashboard()" title="Clear previous results">
+              🧹 Clear Previous Results
+            </button>
+            <span class="test-status-indicator test-status-idle" id="testStatusBadge">● Idle</span>
+          </div>
+
+          <div style="margin: 0.75rem 0 0.5rem 0;">
+            <label class="form-check" style="color: var(--text-dim); font-size: 0.85rem; cursor: pointer;">
+              <input type="checkbox" id="chkClearBeforeTest" checked />
+              <span>🧹 Automatically clear dashboard & previous results before running</span>
+            </label>
+          </div>
+
+          <div class="progress-bar-container" id="testProgressBar">
+            <div class="progress-bar-fill progress-bar-indeterminate"></div>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+            <button class="btn btn-outline btn-sm" onclick="clearTestConsole()">🗑 Clear Console</button>
+            <button class="btn btn-outline btn-sm" onclick="showPage('run')" id="btnGoAnalyze" style="display:none;">
+              ▶ Now Run AI Analysis →
+            </button>
+          </div>
+
+          <div class="console-output visible" id="testConsole" style="display:block; min-height: 200px;">Waiting for test execution...\n\nClick "🚀 Run All Tests" to start the Playwright test suite.\nTests output will stream here in real-time.</div>
+        </div>
+      </div>
+
       <!-- ═══ Run Analysis Page ═══ -->
       <div class="page" id="page-run">
         <div class="run-panel">
@@ -392,8 +713,19 @@
           <p class="desc">Trigger a new analysis run against your Playwright test results using the local Ollama LLM or Claude API.</p>
 
           <div class="form-group">
-            <label class="form-label">Input File Path</label>
-            <input class="form-input" id="runInput" type="text" value="./real-tests/test-results/results.json" placeholder="Path to results.json or allure-results/" />
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+              <label class="form-label" style="margin-bottom: 0;">Input File Path</label>
+              <div style="display: flex; gap: 0.5rem; font-size: 0.78rem;">
+                <span style="color: var(--text-dim);">Presets:</span>
+                <a href="#" style="color: var(--primary-text); text-decoration: underline;" onclick="setInputPreset('real'); return false;">Real Tests</a>
+                <span style="color: var(--border);">|</span>
+                <a href="#" style="color: var(--primary-text); text-decoration: underline;" onclick="setInputPreset('sample'); return false;">Sample Fixture</a>
+              </div>
+            </div>
+            <input class="form-input" id="runInput" type="text" value="./real-tests/test-results/results.json" placeholder="Path to results.json or allure-results/" oninput="checkInputFileStatus()" />
+            <div id="inputStatusMsg" style="font-size: 0.8rem; margin-top: 0.4rem; color: var(--text-dim); display: flex; align-items: center; gap: 0.5rem;">
+              <!-- Dynamically populated -->
+            </div>
           </div>
 
           <div class="form-row">
@@ -406,24 +738,95 @@
             </div>
             <div class="form-group">
               <label class="form-label">Model</label>
-              <input class="form-input" id="runModel" type="text" value="qwen3:8b" placeholder="e.g. qwen3:8b, llama3" />
+              <input class="form-input" id="runModel" type="text" value="qwen3:1.7b" placeholder="e.g. qwen3:1.7b, qwen3:8b, llama3" />
             </div>
           </div>
 
-          <div class="form-group" style="display: flex; gap: 2rem;">
-            <label class="form-check"><input type="checkbox" id="runDryRun" /> Dry Run (mock, no LLM call)</label>
-            <label class="form-check"><input type="checkbox" id="runApplyFix" /> Auto-apply code fixes</label>
-            <label class="form-check"><input type="checkbox" id="runVision" /> Vision screenshot analysis</label>
+          <div class="form-group" style="display: flex; gap: 2rem; flex-wrap: wrap;">
+            <label class="form-check"><input type="checkbox" id="chkClearBeforeAnalyze" checked /> 🧹 Clear dashboard before analyzing</label>
+            <label class="form-check"><input type="checkbox" id="runDryRun" /> Dry Run (instant mock analysis)</label>
+            <label class="form-check"><input type="checkbox" id="runApplyFix" /> Auto-apply code fixes to disk</label>
+            <label class="form-check"><input type="checkbox" id="runVision" checked /> Vision screenshot analysis</label>
           </div>
 
-          <button class="btn btn-primary" id="runBtn" onclick="triggerAnalysis()">
-            ▶ Start Analysis
-          </button>
+          <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-primary" id="runBtn" onclick="triggerAnalysis()">
+              ▶ Start Analysis
+            </button>
+            <button class="btn btn-outline btn-sm" id="btnStopAnalysis" onclick="stopAnalysis()" style="display:none; border-color: rgba(239, 68, 68, 0.5); color: #f87171;">
+              ⏹ Stop Analysis
+            </button>
+            <button class="btn btn-success" id="btnRunTestsAndAnalyze" onclick="triggerRunTestsAndAnalyze()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+              ⚡ Run Tests & Analyze (1-Click)
+            </button>
+          </div>
+
+          <div class="progress-bar-container" id="analysisProgressBar">
+            <div class="progress-bar-fill" id="analysisProgressBarFill" style="width: 0%; transition: width 0.3s ease;"></div>
+          </div>
+          <div id="analysisProgressText" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0.35rem; display: none;"></div>
 
           <div class="console-output" id="runConsole"></div>
         </div>
       </div>
 
+      <!-- ═══ Reports Page ═══ -->
+      <div class="page" id="page-reports">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem;">📑 AI Failure Analysis Reports</h3>
+            <p style="color: var(--text-dim); font-size: 0.85rem;">Browse, preview, and download AI triage reports generated from Playwright test executions.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-outline btn-sm" onclick="loadReports()">↻ Refresh</button>
+            <button class="btn btn-primary btn-sm" onclick="showPage('run')">⚡ Run New Analysis</button>
+          </div>
+        </div>
+
+        <!-- Latest Report Highlight Banner -->
+        <div id="latestReportBanner" style="display:none; background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(16, 185, 129, 0.12) 100%); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span style="background: #10b981; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 9999px; text-transform: uppercase;">⚡ Up To Date</span>
+                <span style="font-weight: 700; font-size: 1rem; color: #fff;" id="latestReportTitle">Real Tests AI Failure Analysis</span>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-dim);" id="latestReportMeta">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <button class="btn btn-primary btn-sm" onclick="openReport('real-test-report.html', 'html')">
+                🌐 Open Interactive HTML Report
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="openReport('real-test-report.json', 'json')">
+                📊 View JSON
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="openReport('real-test-report.md', 'md')">
+                📝 View Markdown
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="reports-grid" id="reportsGrid">
+          <div class="empty-state"><div class="empty-icon">📑</div><p>Loading reports...</p></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Screenshot Modal -->
+  <div class="modal-overlay" id="screenshotModal" onclick="closeScreenshotModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="modalTitle">🖼️ Failure Screenshot Inspection</h3>
+        <button class="modal-close" onclick="closeScreenshotModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <img src="" alt="Failure Screenshot" class="modal-img" id="modalImg" />
+      </div>
     </div>
   </div>
 
@@ -435,6 +838,8 @@
     let reportData = null;
     let flakyData = [];
     let currentFilter = 'all';
+    let searchQuery = '';
+    let testEventSource = null;
 
     // ── Navigation ──
     function showPage(pageId) {
@@ -442,34 +847,64 @@
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById('page-' + pageId).classList.add('active');
       document.querySelector(`.nav-item[data-page="${pageId}"]`)?.classList.add('active');
-      const titles = { dashboard: 'Dashboard', failures: 'Failure Triage', flaky: 'Flaky Test Analytics', run: 'Run Analysis' };
-      document.getElementById('pageTitle').textContent = titles[pageId] || 'Dashboard';
+      const titles = {
+        dashboard: 'Executive Dashboard',
+        failures: 'Failure Triage',
+        flaky: 'Flaky Test Analytics',
+        run: 'Run Analysis',
+        tests: 'Run Playwright Tests',
+        reports: 'Reports',
+      };
+      document.getElementById('pageTitle').textContent = titles[pageId] || 'Executive Dashboard';
+      // Load reports when navigating to reports page
+      if (pageId === 'reports') loadReports();
+      if (pageId === 'run') checkInputFileStatus();
     }
 
     function showToast(msg, type = 'info') {
       const t = document.getElementById('toast');
       t.textContent = msg; t.className = 'toast ' + type + ' show';
-      setTimeout(() => t.classList.remove('show'), 3000);
+      setTimeout(() => t.classList.remove('show'), 3500);
     }
 
     function escapeHtml(s) {
       if (!s) return '';
-      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // ── Data Loading ──
+    // ── Search & Filter ──
+    function onSearchInput(val) {
+      searchQuery = (val || '').trim().toLowerCase();
+      document.getElementById('searchClear').style.display = searchQuery ? 'block' : 'none';
+      renderFailures();
+    }
+
+    function clearSearch() {
+      document.getElementById('failureSearch').value = '';
+      searchQuery = '';
+      document.getElementById('searchClear').style.display = 'none';
+      renderFailures();
+    }
+
+    function filterFailures(cat) {
+      currentFilter = cat;
+      renderFilterPills();
+      renderFailures();
+    }
+
+    // ── Data Refresh ──
     async function refreshData() {
       try {
         const [reportRes, flakyRes] = await Promise.all([
-          fetch('/api/report'),
-          fetch('/api/flaky')
+          fetch('/api/report').catch(() => null),
+          fetch('/api/flaky').catch(() => null)
         ]);
-        if (reportRes.ok) reportData = await reportRes.json();
-        if (flakyRes.ok) flakyData = await flakyRes.json();
+        if (reportRes?.ok) reportData = await reportRes.json();
+        if (flakyRes?.ok) flakyData = await flakyRes.json();
         renderDashboard();
         renderFailures();
         renderFlaky();
-        showToast('Data refreshed', 'success');
+        showToast('Data refreshed successfully', 'success');
       } catch (err) {
         showToast('Failed to load data', 'error');
       }
@@ -481,17 +916,35 @@
         document.getElementById('metricTotal').textContent = '—';
         document.getElementById('metricFailures').textContent = '—';
         document.getElementById('metricPassRate').textContent = '—';
+        document.getElementById('metricFlaky').textContent = '—';
+        document.getElementById('navFailureCount').textContent = '0';
+        document.getElementById('roiTimeSaved').textContent = '— hrs';
+        document.getElementById('roiFixRate').textContent = '—%';
+        document.getElementById('fixableCount').textContent = '0';
+        document.getElementById('distChart').innerHTML = '<div style="color:var(--text-dim);font-size:0.85rem;padding:2.5rem 1rem;text-align:center;">✨ Clean state — No failure taxonomy.<br>Run tests or analysis to populate.</div>';
+        document.getElementById('topFailures').innerHTML = '<div style="color:var(--text-dim);font-size:0.85rem;padding:2.5rem 1rem;text-align:center;">✨ Clean state — No pending failures.</div>';
+        renderFilterPills();
         return;
       }
       const r = reportData;
+      const totalFails = r.totalFailures || 0;
       document.getElementById('metricTotal').textContent = r.totalTests || 0;
-      document.getElementById('metricFailures').textContent = r.totalFailures || 0;
-      const passRate = r.totalTests > 0 ? ((1 - r.totalFailures / r.totalTests) * 100).toFixed(1) + '%' : '—';
+      document.getElementById('metricFailures').textContent = totalFails;
+      const passRate = r.totalTests > 0 ? ((1 - totalFails / r.totalTests) * 100).toFixed(1) + '%' : '—';
       document.getElementById('metricPassRate').textContent = passRate;
       document.getElementById('metricFlaky').textContent = flakyData.length || 0;
-      document.getElementById('navFailureCount').textContent = r.totalFailures || 0;
+      document.getElementById('navFailureCount').textContent = totalFails;
 
-      // Distribution chart
+      // Executive ROI metrics calculation
+      const hoursSaved = (totalFails * 10 / 60).toFixed(1);
+      const fixableCount = (r.analyses || []).filter(a => !!a.codeFix).length;
+      const fixRate = totalFails > 0 ? Math.round((fixableCount / totalFails) * 100) : 0;
+
+      document.getElementById('roiTimeSaved').textContent = `${hoursSaved} hrs`;
+      document.getElementById('roiFixRate').textContent = `${fixRate}%`;
+      document.getElementById('fixableCount').textContent = fixableCount;
+
+      // Taxonomy Distribution chart
       const cats = {};
       (r.analyses || []).forEach(a => { cats[a.category] = (cats[a.category] || 0) + 1; });
       const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
@@ -506,7 +959,7 @@
         'Unknown/Needs Manual Review': '#64748b',
       };
       document.getElementById('distChart').innerHTML = sorted.map(([cat, count]) => {
-        const pct = ((count / (r.totalFailures || 1)) * 100).toFixed(0);
+        const pct = ((count / (totalFails || 1)) * 100).toFixed(0);
         const w = ((count / maxCount) * 100).toFixed(0);
         const c = colors[cat] || '#64748b';
         return `<div class="bar-row">
@@ -519,15 +972,18 @@
 
       // Top failures
       document.getElementById('topFailures').innerHTML = (r.analyses || []).slice(0, 5).map(a => `
-        <div style="display:flex;align-items:center;gap:0.7rem;padding:0.55rem 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:0.7rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
           <span class="fc-status ${a.confidence === 'High' ? 'high' : a.confidence === 'Medium' ? 'medium' : 'low'}"></span>
           <span style="flex:1;font-size:0.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(a.testName)}</span>
           <span class="tag ${getCategoryTagClass(a.category)}" style="flex-shrink:0">${a.category}</span>
         </div>
       `).join('');
+
+      renderFilterPills();
     }
 
     function getCategoryTagClass(cat) {
+      if (!cat) return 'tag-unknown';
       if (cat.includes('Locator')) return 'tag-locator';
       if (cat.includes('Timing')) return 'tag-timing';
       if (cat.includes('Data')) return 'tag-data';
@@ -537,6 +993,39 @@
       return 'tag-unknown';
     }
 
+    // ── Render Filter Pills ──
+    function renderFilterPills() {
+      const pillsContainer = document.getElementById('filterPills');
+      if (!reportData || !reportData.analyses) {
+        pillsContainer.innerHTML = '';
+        return;
+      }
+      const list = reportData.analyses;
+      const counts = { all: list.length, hasFix: 0, highConf: 0 };
+      list.forEach(a => {
+        counts[a.category] = (counts[a.category] || 0) + 1;
+        if (a.codeFix) counts.hasFix++;
+        if (a.confidence === 'High') counts.highConf++;
+      });
+
+      const categories = [
+        { id: 'all', label: 'All Failures', count: counts.all },
+        { id: 'has-fix', label: '⚡ With Self-Healing Fix', count: counts.hasFix },
+        { id: 'Locator/Selector Issue', label: '🎯 Locator', count: counts['Locator/Selector Issue'] || 0 },
+        { id: 'Timing/Sync Issue', label: '⏱️ Timing', count: counts['Timing/Sync Issue'] || 0 },
+        { id: 'Application Bug', label: '🐛 App Bug', count: counts['Application Bug'] || 0 },
+        { id: 'Environment/Infra Issue', label: '🌐 Infra', count: counts['Environment/Infra Issue'] || 0 },
+        { id: 'Test Data Issue', label: '📦 Data', count: counts['Test Data Issue'] || 0 },
+        { id: 'Test Script Bug', label: '📝 Script', count: counts['Test Script Bug'] || 0 },
+      ];
+
+      pillsContainer.innerHTML = categories.map(c => `
+        <div class="filter-pill ${currentFilter === c.id ? 'active' : ''}" onclick="filterFailures('${c.id}')">
+          ${c.label} <span class="pill-count">${c.count}</span>
+        </div>
+      `).join('');
+    }
+
     // ── Failures Render ──
     function renderFailures() {
       const container = document.getElementById('failuresList');
@@ -544,10 +1033,36 @@
         container.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p>No failures to display. Run analysis to see results.</p></div>';
         return;
       }
-      const analyses = currentFilter === 'all' ? reportData.analyses : reportData.analyses.filter(a => a.category === currentFilter);
-      container.innerHTML = analyses.map((a, i) => `
-        <div class="failure-card" id="fc-${i}">
-          <div class="failure-card-header" onclick="toggleCard(${i})">
+
+      // Filter by category or special filter
+      let filtered = reportData.analyses.filter(a => {
+        if (currentFilter === 'all') return true;
+        if (currentFilter === 'has-fix') return !!a.codeFix;
+        if (currentFilter === 'high-conf') return a.confidence === 'High';
+        return a.category === currentFilter;
+      });
+
+      // Filter by search query
+      if (searchQuery) {
+        filtered = filtered.filter(a => {
+          const t = (a.testName || '').toLowerCase();
+          const e = (a.explanation || '').toLowerCase();
+          const l = (a.relevantLogExcerpt || '').toLowerCase();
+          const f = (a.codeFix?.targetFile || '').toLowerCase();
+          return t.includes(searchQuery) || e.includes(searchQuery) || l.includes(searchQuery) || f.includes(searchQuery);
+        });
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>No test failures matched your filter or search query.</p></div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map((a) => {
+        const originalIndex = reportData.analyses.indexOf(a);
+        return `
+        <div class="failure-card" id="fc-${originalIndex}">
+          <div class="failure-card-header" onclick="toggleCard(${originalIndex})">
             <div class="fc-left">
               <span class="fc-status ${a.confidence === 'High' ? 'high' : a.confidence === 'Medium' ? 'medium' : 'low'}"></span>
               <span class="fc-name">${escapeHtml(a.testName)}</span>
@@ -555,29 +1070,50 @@
             <div class="fc-right">
               <span class="tag ${getCategoryTagClass(a.category)}">${a.category}</span>
               <span class="tag tag-conf tag-conf-${a.confidence.toLowerCase()}">${a.confidence}</span>
+              <button class="btn btn-jira btn-sm" onclick="event.stopPropagation(); copyJiraTicket(${originalIndex})">📋 Jira</button>
               <span class="fc-chevron">▼</span>
             </div>
           </div>
           <div class="failure-card-body">
             <div class="detail-grid">
               <div class="detail-box">
-                <h4>💡 AI Diagnosis</h4>
+                <h4>💡 Root Cause Diagnosis</h4>
                 <p>${escapeHtml(a.explanation)}</p>
               </div>
               <div class="detail-box">
-                <h4>🔧 Suggested Action</h4>
+                <h4>🔧 Suggested Remediation</h4>
                 <p>${escapeHtml(a.suggestedAction)}</p>
               </div>
-              ${a.visualAnalysis ? `<div class="detail-box full"><h4>🖼️ Visual Analysis</h4><p>${escapeHtml(a.visualAnalysis)}</p></div>` : ''}
+              
+              ${a.screenshotPath ? `
+                <div class="detail-box full">
+                  <h4>🖼️ Failure Screenshot & Visual Inspection</h4>
+                  <div class="screenshot-box">
+                    <img src="/api/screenshot?path=${encodeURIComponent(a.screenshotPath)}" class="screenshot-thumb" onclick="openScreenshotModal('${encodeURIComponent(a.screenshotPath)}', '${escapeHtml(a.testName)}')" alt="Failure Screenshot" />
+                    <div class="screenshot-info">
+                      <h5>${escapeHtml(a.screenshotPath.split(/[\\\\/]/).pop())}</h5>
+                      <p>${escapeHtml(a.visualAnalysis || 'Screenshot captured at failure timestamp.')}</p>
+                      <button class="btn btn-outline btn-sm" onclick="openScreenshotModal('${encodeURIComponent(a.screenshotPath)}', '${escapeHtml(a.testName)}')">🔍 View Full Screenshot</button>
+                    </div>
+                  </div>
+                </div>
+              ` : a.visualAnalysis ? `
+                <div class="detail-box full">
+                  <h4>🖼️ Visual Analysis</h4>
+                  <p>${escapeHtml(a.visualAnalysis)}</p>
+                </div>
+              ` : ''}
+
               <div class="detail-box full">
-                <h4>📋 Relevant Log Excerpt</h4>
+                <h4>📋 Relevant Stack Trace & Logs</h4>
                 <div class="log-block">${escapeHtml(a.relevantLogExcerpt)}</div>
               </div>
+
               ${a.codeFix ? `
                 <div class="detail-box full">
-                  <h4 style="display:flex;align-items:center;justify-content:space-between;">
-                    🛠️ Proposed Code Fix
-                    <button class="btn btn-success btn-sm" onclick='applyFix(${JSON.stringify(a.codeFix).replace(/'/g, "\\'")})'> ⚡ Apply Fix</button>
+                  <h4>
+                    🛠️ Proposed Self-Healing Code Fix
+                    <button class="btn btn-success btn-sm" onclick="applyFixByIndex(${originalIndex})">⚡ Apply Fix to Disk</button>
                   </h4>
                   <div class="diff-block">${formatDiff(a.codeFix.unifiedDiff)}</div>
                 </div>
@@ -585,18 +1121,11 @@
             </div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
     }
 
     function toggleCard(i) {
-      document.getElementById('fc-' + i).classList.toggle('open');
-    }
-
-    function filterFailures(cat) {
-      currentFilter = cat;
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      document.querySelector(`.filter-btn[data-filter="${cat}"]`)?.classList.add('active');
-      renderFailures();
+      document.getElementById('fc-' + i)?.classList.toggle('open');
     }
 
     function formatDiff(diffStr) {
@@ -608,17 +1137,220 @@
       }).join('\n');
     }
 
-    // ── Apply Fix ──
+    // ── Apply Fixes ──
+    function applyFixByIndex(index) {
+      const item = reportData?.analyses?.[index];
+      if (item?.codeFix) {
+        applyFix(item.codeFix);
+      }
+    }
+
     async function applyFix(codeFix) {
       try {
         const res = await fetch('/api/apply-fix', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ codeFix }),
         });
+        if (!res.ok) {
+          throw new Error(`Server returned HTTP ${res.status}`);
+        }
         const data = await res.json();
-        if (data.success) { showToast('Code fix applied to disk!', 'success'); }
-        else { showToast('Failed to apply fix', 'error'); }
-      } catch (err) { showToast('Error: ' + err.message, 'error'); }
+        if (data.success) { showToast('⚡ Code fix applied directly to spec file on disk!', 'success'); return true; }
+        else { showToast('Failed to apply fix: ' + (data.error || 'Unknown error'), 'error'); return false; }
+      } catch (err) { showToast('Error: ' + err.message, 'error'); return false; }
+    }
+
+    async function applyAllFixes() {
+      const fixableAnalyses = (reportData?.analyses || []).filter(a => !!a.codeFix);
+      const fixable = fixableAnalyses.length;
+      if (fixable === 0) {
+        showToast('No code fixes available to apply', 'info');
+        return;
+      }
+      if (!confirm(`Apply all ${fixable} proposed self-healing code fixes directly to spec files on disk?`)) return;
+
+      const btn = document.getElementById('btnApplyAll');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Applying...';
+
+      try {
+        let appliedCount = 0;
+        let success = false;
+
+        // Try bulk server endpoint first
+        try {
+          const res = await fetch('/api/apply-all-fixes', { method: 'POST' });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success) {
+              appliedCount = data.appliedCount;
+              success = true;
+            }
+          }
+        } catch {
+          // Fall through to per-fix fallback below
+        }
+
+        // Resilient Fallback: If bulk endpoint returned 404 (e.g. server was not restarted yet),
+        // apply each code fix using the existing /api/apply-fix endpoint
+        if (!success) {
+          for (const a of fixableAnalyses) {
+            try {
+              const res = await fetch('/api/apply-fix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ codeFix: a.codeFix }),
+              });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.success) appliedCount++;
+              }
+            } catch {}
+          }
+          success = appliedCount > 0;
+        }
+
+        if (success) {
+          showToast(`⚡ Successfully patched ${appliedCount} test spec file(s) on disk!`, 'success');
+        } else {
+          showToast('Failed to apply fixes. Please restart the dashboard server.', 'error');
+        }
+      } catch (err) {
+        showToast('Network error: ' + err.message, 'error');
+      }
+      btn.disabled = false;
+      btn.innerHTML = `⚡ Apply All Fixes (<span id="fixableCount">${fixable}</span>)`;
+    }
+
+    // ── Undo All Fixes ──
+    async function undoAllFixes() {
+      if (!confirm('Revert all test files to their last Git-committed version?\n\nThis will undo any auto-applied fixes and restore original test code.')) return;
+
+      const btn = document.getElementById('btnUndoFixes');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Reverting...';
+
+      try {
+        const res = await fetch('/api/undo-fixes', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('↩ ' + data.message, 'success');
+        } else {
+          showToast('Failed to undo: ' + (data.error || 'Unknown error'), 'error');
+        }
+      } catch (err) {
+        showToast('Network error: ' + err.message, 'error');
+      }
+      btn.disabled = false;
+      btn.innerHTML = '↩ Undo All Fixes';
+    }
+
+    // ── Jira Issue Copy ──
+    function copyJiraTicket(index) {
+      const a = reportData?.analyses?.[index];
+      if (!a) return;
+
+      const jiraMarkdown = `h2. 🚨 Bug: [${a.category}] ${a.testName}
+
+*Test Suite:* ${a.testName.split('>')[0]?.trim() || 'Playwright Test'}
+*Root Cause Category:* {{${a.category}}}
+*Confidence Rating:* *${a.confidence}*
+*Spec File:* {{${a.codeFix?.targetFile || 'spec file'}}}
+
+h3. 💡 Root Cause Analysis
+${a.explanation}
+
+h3. 🔧 Recommended Remediation
+${a.suggestedAction}
+
+h3. 📋 Relevant Stack & Error Log
+{noformat}
+${a.relevantLogExcerpt}
+{noformat}
+
+${a.codeFix ? `h3. 🛠️ Proposed Code Fix Patch
+{code:typescript}
+${a.codeFix.replacementCode}
+{code}` : ''}
+
+_Generated automatically by AI Failure Analysis Copilot_`;
+
+      navigator.clipboard.writeText(jiraMarkdown).then(() => {
+        showToast('📋 Jira bug ticket markdown copied to clipboard!', 'success');
+      }).catch(() => {
+        showToast('Failed to copy to clipboard', 'error');
+      });
+    }
+
+    // ── Executive Digest Export ──
+    function exportExecutiveDigest() {
+      if (!reportData) return;
+      const r = reportData;
+      const totalFails = r.totalFailures || 0;
+      const hoursSaved = (totalFails * 10 / 60).toFixed(1);
+
+      const cats = {};
+      (r.analyses || []).forEach(a => { cats[a.category] = (cats[a.category] || 0) + 1; });
+      const breakdown = Object.entries(cats).map(([k, v]) => `  • ${k}: ${v} (${((v/totalFails)*100).toFixed(1)}%)`).join('\n');
+
+      const digest = `# 🤖 AI Failure Analysis Copilot — Executive Triage Digest
+**Date:** ${new Date().toLocaleString()}
+**Test Run Status:** ${r.totalTests} Tests Run • ${totalFails} Failures Triaged
+
+---
+
+### ⚡ Engineering ROI & Productivity
+• **Manual Triage Time Saved:** ${hoursSaved} Hours (based on 10 min/failure baseline)
+• **Inference Cost:** $0.00 (100% On-Premise Local Ollama execution)
+• **Self-Healing Patch Rate:** ${Math.round(((r.analyses || []).filter(a => !!a.codeFix).length / totalFails) * 100)}% of failures have automated fixes ready
+
+---
+
+### 🎯 Root Cause Taxonomy Breakdown
+${breakdown}
+
+---
+
+### 🚀 Top Action Items for Engineering
+1. **Locators & UI Drift:** Review recent front-end DOM changes for broken locators.
+2. **Timing & Flakiness:** Validate network/hydration delays on slow endpoints.
+3. **Self-Healing Fixes:** Auto-patch spec files using \`npm run analyze:fix\`.
+
+_Generated by AI Failure Analysis Copilot_`;
+
+      navigator.clipboard.writeText(digest).then(() => {
+        showToast('📄 Executive Digest copied to clipboard!', 'success');
+      }).catch(() => {
+        showToast('Failed to copy digest', 'error');
+      });
+    }
+
+    function copyTriageSlackDigest() {
+      if (!reportData) return;
+      const r = reportData;
+      const slackText = `🚨 *Playwright AI Triage Alert* (${r.totalFailures} Failures Triaged)
+• Total Tests: ${r.totalTests} | Pass Rate: ${((1 - r.totalFailures/r.totalTests)*100).toFixed(1)}%
+• Est. Triage Time Saved: ${(r.totalFailures * 10 / 60).toFixed(1)} hrs
+• Top Category: ${document.querySelector('.bar-label')?.textContent || 'Locator Issues'}
+👉 Review full report on Dashboard: http://localhost:3000`;
+
+      navigator.clipboard.writeText(slackText).then(() => {
+        showToast('💬 Slack digest copied to clipboard!', 'success');
+      });
+    }
+
+    // ── Screenshot Modal ──
+    function openScreenshotModal(encodedPath, title) {
+      const modal = document.getElementById('screenshotModal');
+      const img = document.getElementById('modalImg');
+      const titleEl = document.getElementById('modalTitle');
+      img.src = `/api/screenshot?path=${encodedPath}`;
+      titleEl.textContent = `🖼️ Failure Screenshot: ${title}`;
+      modal.classList.add('open');
+    }
+
+    function closeScreenshotModal() {
+      document.getElementById('screenshotModal').classList.remove('open');
     }
 
     // ── Flaky Render ──
@@ -645,23 +1377,293 @@
         }).join('')}</tbody></table>`;
     }
 
-    // ── Run Analysis ──
-    async function triggerAnalysis() {
-      const btn = document.getElementById('runBtn');
-      const consoleEl = document.getElementById('runConsole');
+    // ══════════════════════════════════════════════════════════════════
+    // ── Clear Dashboard / Reset Results ──
+    // ══════════════════════════════════════════════════════════════════
+    async function clearDashboard(silent = false) {
+      if (!silent) {
+        if (!confirm('Clear all previous test failure results from the dashboard?\n\nThis will reset metrics and cards so you can start with a fresh run.')) return;
+      }
+      isPipelineRunning = false;
+      try {
+        await fetch('/api/clear-dashboard', { method: 'POST' });
+        reportData = null;
+        currentFilter = 'all';
+        searchQuery = '';
+        renderDashboard();
+        renderFailures();
+
+        const testConsole = document.getElementById('testConsole');
+        if (testConsole) {
+          testConsole.textContent = 'Dashboard and previous results cleared.\n\nClick "🚀 Run All Tests" to start fresh execution.';
+        }
+        resetTestUI('idle');
+        if (!silent) {
+          showToast('🧹 Dashboard cleared successfully! Ready for fresh run.', 'success');
+        }
+      } catch (err) {
+        if (!silent) showToast('Failed to clear dashboard: ' + err.message, 'error');
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ── Run Playwright Tests ──
+    // ══════════════════════════════════════════════════════════════════
+    async function triggerTestRun(options = {}) {
+      if (!options.fromPipeline) {
+        const clearFirst = document.getElementById('chkClearBeforeTest')?.checked;
+        if (clearFirst) {
+          await clearDashboard(true);
+        }
+      }
+
+      const btn = document.getElementById('btnRunTests');
+      const stopBtn = document.getElementById('btnStopTests');
+      const statusBadge = document.getElementById('testStatusBadge');
+      const consoleEl = document.getElementById('testConsole');
+      const progressBar = document.getElementById('testProgressBar');
+      const goAnalyzeBtn = document.getElementById('btnGoAnalyze');
+      const navStatus = document.getElementById('navTestStatus');
+
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Running...';
+      const btn1Click1 = document.getElementById('btnRunTestsAndAnalyzeTestsTab');
+      if (btn1Click1) btn1Click1.disabled = true;
+      const btn1Click2 = document.getElementById('btnRunTestsAndAnalyze');
+      if (btn1Click2) btn1Click2.disabled = true;
+
+      stopBtn.style.display = 'inline-flex';
+      goAnalyzeBtn.style.display = 'none';
+      statusBadge.className = 'test-status-indicator test-status-running';
+      statusBadge.textContent = '● Running...';
+      progressBar.classList.add('visible');
+      navStatus.style.display = 'inline';
+      navStatus.textContent = '⏳';
+
+      consoleEl.textContent = '> 🚀 Starting Playwright test suite...\n> Command: npm run test:real\n\n';
+
+      try {
+        const res = await fetch('/api/run-tests', { method: 'POST' });
+        const data = await res.json();
+
+        if (!data.success) {
+          consoleEl.textContent += `> ❌ ${data.error}\n`;
+          resetTestUI('fail');
+          isPipelineRunning = false;
+          return;
+        }
+
+        if (data.alreadyRunning) {
+          consoleEl.textContent += '> ℹ️ Tests are currently in progress. Attached to live streaming output...\n\n';
+        }
+
+        // Connect to SSE stream for live output
+        if (testEventSource) testEventSource.close();
+        testEventSource = new EventSource('/api/run-tests/stream');
+
+        testEventSource.onmessage = (event) => {
+          try {
+            const text = JSON.parse(event.data);
+            consoleEl.textContent += text;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+          } catch {}
+        };
+
+        testEventSource.addEventListener('done', (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            const passed = data.exitCode === 0;
+            resetTestUI(passed ? 'pass' : 'fail');
+            goAnalyzeBtn.style.display = 'inline-flex';
+          } catch {}
+          testEventSource?.close();
+          testEventSource = null;
+        });
+
+        testEventSource.onerror = () => {
+          // SSE connection closed (expected when tests finish)
+          if (testEventSource) {
+            testEventSource.close();
+            testEventSource = null;
+          }
+        };
+
+      } catch (err) {
+        consoleEl.textContent += `> ❌ Network error: ${err.message}\n`;
+        resetTestUI('fail');
+        isPipelineRunning = false;
+      }
+    }
+
+    function resetTestUI(state) {
+      const btn = document.getElementById('btnRunTests');
+      const stopBtn = document.getElementById('btnStopTests');
+      const statusBadge = document.getElementById('testStatusBadge');
+      const progressBar = document.getElementById('testProgressBar');
+      const navStatus = document.getElementById('navTestStatus');
+
+      btn.disabled = false;
+      btn.innerHTML = '🚀 Run All Tests';
+      const btn1Click1 = document.getElementById('btnRunTestsAndAnalyzeTestsTab');
+      if (btn1Click1) { btn1Click1.disabled = false; btn1Click1.innerHTML = '⚡ Run Tests & Analyze (1-Click)'; }
+      const btn1Click2 = document.getElementById('btnRunTestsAndAnalyze');
+      if (btn1Click2) { btn1Click2.disabled = false; btn1Click2.innerHTML = '⚡ Run Tests & Analyze (1-Click)'; }
+      stopBtn.style.display = 'none';
+      progressBar.classList.remove('visible');
+
+      if (state === 'pass') {
+        statusBadge.className = 'test-status-indicator test-status-pass';
+        statusBadge.textContent = '✅ Passed';
+        navStatus.textContent = '✅';
+      } else if (state === 'fail') {
+        statusBadge.className = 'test-status-indicator test-status-fail';
+        statusBadge.textContent = '❌ Failed';
+        navStatus.textContent = '❌';
+      } else {
+        statusBadge.className = 'test-status-indicator test-status-idle';
+        statusBadge.textContent = '● Idle';
+        navStatus.style.display = 'none';
+      }
+    }
+
+    async function stopTestRun() {
+      isPipelineRunning = false;
+      try {
+        await fetch('/api/run-tests/stop', { method: 'POST' });
+        showToast('⏹ Tests stopped', 'info');
+      } catch {}
+      if (testEventSource) { testEventSource.close(); testEventSource = null; }
+      resetTestUI('fail');
+    }
+
+    function clearTestConsole() {
+      document.getElementById('testConsole').textContent = 'Console cleared.\n';
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ── Run Analysis ──
+    // ══════════════════════════════════════════════════════════════════
+    let analysisEventSource = null;
+
+    async function stopAnalysis() {
+      try {
+        await fetch('/api/analyze/stop', { method: 'POST' });
+        showToast('⏹ Analysis stopped', 'info');
+      } catch {}
+      if (analysisEventSource) {
+        analysisEventSource.close();
+        analysisEventSource = null;
+      }
+      const btn = document.getElementById('runBtn');
+      const stopBtn = document.getElementById('btnStopAnalysis');
+      const progressBar = document.getElementById('analysisProgressBar');
+      const progressText = document.getElementById('analysisProgressText');
+      const consoleEl = document.getElementById('runConsole');
+      if (btn) { btn.disabled = false; btn.innerHTML = '▶ Start Analysis'; }
+      if (stopBtn) stopBtn.style.display = 'none';
+      if (progressBar) progressBar.classList.remove('visible');
+      if (progressText) progressText.style.display = 'none';
+      if (consoleEl) consoleEl.textContent += '\n> ⏹ AI Analysis was stopped by user.\n';
+    }
+
+    async function triggerAnalysis(options = {}) {
+      if (!options.skipClear) {
+        const clearFirst = document.getElementById('chkClearBeforeAnalyze')?.checked;
+        if (clearFirst) {
+          await clearDashboard(true);
+        }
+      }
+
+      const btn = document.getElementById('runBtn');
+      const stopBtn = document.getElementById('btnStopAnalysis');
+      const consoleEl = document.getElementById('runConsole');
+      const progressBar = document.getElementById('analysisProgressBar');
+      const progressBarFill = document.getElementById('analysisProgressBarFill');
+      const progressText = document.getElementById('analysisProgressText');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Starting...';
+      if (stopBtn) stopBtn.style.display = 'inline-flex';
       consoleEl.classList.add('visible');
-      consoleEl.textContent = '> Starting AI Failure Analysis pipeline...\n';
+      consoleEl.textContent = '> 🚀 Initiating AI Failure Analysis pipeline...\n';
+      progressBar.classList.add('visible');
+      if (progressBarFill) progressBarFill.style.width = '0%';
+      if (progressText) { progressText.style.display = 'block'; progressText.textContent = 'Initializing AI models...'; }
+
+      const rawInput = (document.getElementById('runInput')?.value || '').trim();
+
+      // Validate that results file exists before analyzing; never trigger loop
+      try {
+        const checkRes = await fetch(`/api/check-input?path=${encodeURIComponent(rawInput)}`);
+        const checkData = await checkRes.json();
+        if (!checkData.exists) {
+          consoleEl.textContent += `> ℹ️ Test results not found on disk at: ${rawInput}\n`;
+          consoleEl.textContent += `> 👉 Please run your tests first under the "🧪 Run Tests" tab, or click "⚡ Run Tests & Analyze".\n`;
+          showToast('Test results file not found on disk. Run tests first!', 'warning');
+          btn.disabled = false;
+          btn.innerHTML = '▶ Start Analysis';
+          if (stopBtn) stopBtn.style.display = 'none';
+          progressBar.classList.remove('visible');
+          if (progressText) progressText.style.display = 'none';
+          return;
+        }
+      } catch {}
 
       const payload = {
-        input: document.getElementById('runInput').value,
+        input: rawInput || './real-tests/test-results/results.json',
         provider: document.getElementById('runProvider').value,
         model: document.getElementById('runModel').value,
         dryRun: document.getElementById('runDryRun').checked,
         applyFix: document.getElementById('runApplyFix').checked,
         vision: document.getElementById('runVision').checked,
       };
+
+      if (payload.dryRun) {
+        consoleEl.textContent += '> 🔸 Mode: Dry Run enabled (fast mock analysis, no API calls)\n';
+      }
+      if (payload.applyFix) {
+        consoleEl.textContent += '> 🛠️ Auto-apply fixes enabled (will patch spec files)\n';
+      }
+      if (payload.vision) {
+        consoleEl.textContent += '> 🖼️ Vision screenshot inspection enabled\n';
+      }
+
+      // Connect to SSE stream for live line-by-line failure triage updates
+      if (analysisEventSource) {
+        analysisEventSource.close();
+      }
+      analysisEventSource = new EventSource('/api/run-tests/stream');
+
+      analysisEventSource.addEventListener('analysis-start', (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          consoleEl.textContent += `> 🔍 Found ${d.totalFailures} failed test(s). Starting AI root cause triage...\n\n`;
+          if (progressText) {
+            progressText.style.display = 'block';
+            progressText.textContent = `0 of ${d.totalFailures} failures triaged (0%)`;
+          }
+        } catch {}
+      });
+
+      analysisEventSource.addEventListener('analysis-progress', (e) => {
+        try {
+          const p = JSON.parse(e.data);
+          if (p.status === 'done') {
+            const pct = Math.round((p.index / p.total) * 100);
+            if (progressBarFill) progressBarFill.style.width = pct + '%';
+            if (progressText) {
+              progressText.style.display = 'block';
+              progressText.textContent = `${p.index} of ${p.total} failures triaged (${pct}%)`;
+            }
+            btn.innerHTML = `<span class="spinner"></span> Triaging ${p.index}/${p.total} (${pct}%)...`;
+            consoleEl.textContent += `> [${p.index}/${p.total}] ${p.testName}\n  ↳ 🏷️ ${p.category} (${p.confidence} Confidence)\n`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+          } else if (p.status === 'error') {
+            consoleEl.textContent += `> ⚠️ [${p.index}/${p.total}] ${p.testName} → ${p.message || 'Error'}\n`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+          }
+        } catch {}
+      });
 
       try {
         const res = await fetch('/api/analyze', {
@@ -670,22 +1672,224 @@
         });
         const data = await res.json();
         if (data.success) {
-          consoleEl.textContent += `> ✅ Analysis complete! ${data.report?.totalFailures || 0} failure(s) triaged.\n`;
+          if (progressBarFill) progressBarFill.style.width = '100%';
+          if (progressText) progressText.textContent = `✅ All ${data.report?.totalFailures || 0} failures successfully triaged (100%)`;
+          consoleEl.textContent += `\n> ✅ Analysis complete! ${data.report?.totalFailures || 0} failure(s) triaged.\n`;
+          if (payload.applyFix) {
+            consoleEl.textContent += `> 🛠️ Auto-applied ${data.appliedFixesCount || 0} code fix(es) directly to test files.\n`;
+          }
+          if (payload.vision) {
+            consoleEl.textContent += `> 🖼️ Vision screenshot analysis completed.\n`;
+          }
           consoleEl.textContent += `> Reports saved to output/\n`;
+          consoleEl.textContent += `> \n> 🎯 Navigating to Failure Triage view...\n`;
           reportData = data.report;
           renderDashboard();
           renderFailures();
-          showToast('Analysis complete!', 'success');
+          showToast(`Analysis complete! ${data.report?.totalFailures || 0} failures triaged.`, 'success');
+          // Auto-navigate to failures page after a short delay
+          setTimeout(() => showPage('failures'), 1500);
         } else {
           consoleEl.textContent += '> ❌ Error: ' + (data.error || 'Unknown error') + '\n';
-          showToast('Analysis failed', 'error');
+          if (data.missingFile) {
+            consoleEl.textContent += '\n> ─────────────────────────────────────────────────────────────\n';
+            consoleEl.textContent += '> 💡 Playwright test results were not found because tests haven\'t been run yet!\n';
+            consoleEl.textContent += '> 👉 Quick Fix Options:\n';
+            consoleEl.textContent += '>    1. Click "⚡ Run Tests & Analyze" above to execute tests and auto-triage.\n';
+            consoleEl.textContent += '>    2. Or click "Sample Fixture" preset above to test with sample data immediately.\n';
+            consoleEl.textContent += '> ─────────────────────────────────────────────────────────────\n';
+          }
+          showToast(data.missingFile ? 'Test results not found. Run tests first!' : (data.error || 'Analysis failed'), 'error');
         }
       } catch (err) {
         consoleEl.textContent += '> ❌ Network error: ' + err.message + '\n';
         showToast('Analysis error', 'error');
+      } finally {
+        if (analysisEventSource) {
+          analysisEventSource.close();
+          analysisEventSource = null;
+        }
+        btn.disabled = false;
+        btn.innerHTML = '▶ Start Analysis';
+        if (stopBtn) stopBtn.style.display = 'none';
+        progressBar.classList.remove('visible');
       }
-      btn.disabled = false;
-      btn.innerHTML = '▶ Start Analysis';
+    }
+
+    // ── Input File Presets & Status ──
+    function setInputPreset(type) {
+      const inputEl = document.getElementById('runInput');
+      if (type === 'real') {
+        inputEl.value = './real-tests/test-results/results.json';
+      } else if (type === 'sample') {
+        inputEl.value = './fixtures/sample-playwright-results.json';
+      }
+      checkInputFileStatus();
+    }
+
+    async function checkInputFileStatus() {
+      const inputEl = document.getElementById('runInput');
+      const statusEl = document.getElementById('inputStatusMsg');
+      if (!inputEl || !statusEl) return;
+      const val = inputEl.value.trim();
+      if (!val) {
+        statusEl.innerHTML = '<span style="color:var(--text-dim);">Please enter a results file path</span>';
+        return;
+      }
+      try {
+        const res = await fetch(`/api/check-input?path=${encodeURIComponent(val)}`);
+        const data = await res.json();
+        if (data.exists) {
+          const sizeKb = (data.sizeBytes / 1024).toFixed(1);
+          statusEl.innerHTML = `<span style="color:#10b981;">✅ File ready for analysis (${sizeKb} KB)</span>`;
+        } else {
+          if (val.includes('real-tests')) {
+            statusEl.innerHTML = `<span style="color:#f59e0b;">⚠️ Results file not generated yet. <a href="#" onclick="showPage('tests'); return false;" style="color:var(--cyan);text-decoration:underline;">Click to go to Run Tests tab</a></span>`;
+          } else {
+            statusEl.innerHTML = `<span style="color:#ef4444;">❌ File not found at path</span>`;
+          }
+        }
+      } catch {
+        statusEl.innerHTML = '';
+      }
+    }
+
+    // Pipeline guard
+    let isPipelineRunning = false;
+
+    // ── 1-Click: Run Tests & Auto-Analyze ──
+    async function triggerRunTestsAndAnalyze() {
+      if (isPipelineRunning) {
+        showToast('Pipeline is already running...', 'info');
+        return;
+      }
+      isPipelineRunning = true;
+
+      showPage('tests');
+      const consoleEl = document.getElementById('testConsole');
+      if (consoleEl) {
+        consoleEl.textContent = '> ⚡ Starting 1-Click Pipeline: Run Tests -> Stream Results -> Auto AI Analysis...\n\n';
+      }
+      
+      const clearFirst = document.getElementById('chkClearBeforeTest')?.checked;
+      if (clearFirst) {
+        await clearDashboard(true);
+      }
+
+      try {
+        await triggerTestRun({ fromPipeline: true });
+
+        if (testEventSource) {
+          testEventSource.addEventListener('done', async () => {
+            setTimeout(async () => {
+              try {
+                showToast('🚀 Tests completed! Starting AI Failure Analysis...', 'info');
+                showPage('run');
+                const runInput = document.getElementById('runInput');
+                if (runInput) runInput.value = './real-tests/test-results/results.json';
+                await triggerAnalysis({ skipClear: true });
+              } finally {
+                isPipelineRunning = false;
+              }
+            }, 1000);
+          }, { once: true });
+        } else {
+          isPipelineRunning = false;
+        }
+      } catch (err) {
+        isPipelineRunning = false;
+        console.error('Pipeline failed to initiate:', err);
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ── Reports ──
+    // ══════════════════════════════════════════════════════════════════
+    async function loadReports() {
+      const grid = document.getElementById('reportsGrid');
+      const banner = document.getElementById('latestReportBanner');
+      const bannerMeta = document.getElementById('latestReportMeta');
+      grid.innerHTML = '<div class="empty-state"><div class="empty-icon"><span class="spinner" style="width:24px;height:24px;"></span></div><p>Loading reports...</p></div>';
+
+      try {
+        const res = await fetch('/api/reports');
+        const data = await res.json();
+
+        // Populate Latest Report Highlight Banner
+        if (data.latestSummary) {
+          banner.style.display = 'block';
+          bannerMeta.innerHTML = `<strong>${data.latestSummary.totalTests} Total Tests</strong> • <span style="color:#f87171;">${data.latestSummary.totalFailures} Triaged Failures</span> • <span style="color:#10b981;">${data.latestSummary.passRate} Pass Rate</span> • Generated ${new Date(data.latestSummary.timestamp).toLocaleString()}`;
+        } else {
+          banner.style.display = 'none';
+        }
+
+        if (!data.reports || data.reports.length === 0) {
+          grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📑</div><p>No reports found. Run an analysis first to generate reports.</p></div>';
+          return;
+        }
+
+        const iconMap = { html: '🌐', json: '📊', md: '📝' };
+        const extClassMap = { html: 'ext-html', json: 'ext-json', md: 'ext-md' };
+
+        grid.innerHTML = data.reports.map(r => `
+          <div class="report-card ${r.isLatest ? 'report-card-latest' : ''}" onclick="openReport('${r.filename}', '${r.extension}')" style="${r.isLatest ? 'border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.03);' : ''}">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+              <div class="report-card-icon">${iconMap[r.extension] || '📄'}</div>
+              <div>
+                ${r.isLatest 
+                  ? '<span style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 9999px;">⚡ LATEST RUN</span>' 
+                  : '<span style="background: rgba(148, 163, 184, 0.15); color: var(--text-dim); font-size: 0.65rem; padding: 0.15rem 0.45rem; border-radius: 4px;">ARCHIVE</span>'}
+              </div>
+            </div>
+            <div class="report-card-name" style="font-weight: 600; font-size: 0.95rem;">${escapeHtml(r.filename)}</div>
+            <div class="report-card-meta" style="margin: 0.5rem 0 1rem 0;">
+              <span class="report-ext-badge ${extClassMap[r.extension] || ''}">${r.extension}</span>
+              <span>${r.sizeFormatted}</span>
+              <span>${new Date(r.lastModified).toLocaleDateString()} ${new Date(r.lastModified).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
+            <div class="report-card-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn btn-primary btn-sm" style="flex: 1;" onclick="event.stopPropagation(); openReport('${r.filename}', '${r.extension}')">
+                ${r.extension === 'html' ? '🌐 View HTML' : '📥 View File'}
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); downloadReport('${r.filename}')" title="Download report file">
+                💾
+              </button>
+              <button class="btn btn-outline btn-sm" style="border-color: rgba(239, 68, 68, 0.3); color: #f87171;" onclick="event.stopPropagation(); deleteReport('${r.filename}')" title="Delete report">
+                🗑
+              </button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        grid.innerHTML = `<div class="empty-state"><div class="empty-icon">❌</div><p>Failed to load reports: ${err.message}</p></div>`;
+      }
+    }
+
+    function openReport(filename, ext) {
+      window.open(`/api/reports/${encodeURIComponent(filename)}`, '_blank');
+    }
+
+    function downloadReport(filename) {
+      const a = document.createElement('a');
+      a.href = `/api/reports/${encodeURIComponent(filename)}`;
+      a.download = filename;
+      a.click();
+    }
+
+    async function deleteReport(filename) {
+      if (!confirm(`Delete report "${filename}" from output directory?`)) return;
+      try {
+        const res = await fetch(`/api/reports/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Report ${filename} removed`, 'info');
+          loadReports();
+        } else {
+          showToast(`Failed: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showToast('Error deleting report: ' + err.message, 'error');
+      }
     }
 
     // ── Initial Load ──

@@ -42,7 +42,7 @@ test.describe('The Internet - Herokuapp', () => {
     await page.goto(`${BASE_URL}/dropdown`);
 
     // BUG: Trying to click a non-existent dropdown trigger button
-    await page.locator('.dropdown-trigger-btn').click({ timeout: 5000 });
+    await page.locator('#dropdown').click({ timeout: 5000 });
     await page.locator('.dropdown-option[data-value="2"]').click({ timeout: 3000 });
 
     await expect(page.locator('#dropdown')).toHaveValue('2');
@@ -76,6 +76,6 @@ test.describe('The Internet - Herokuapp', () => {
 
     // BUG: Checking immediately without waiting for the loading to finish
     // The element takes ~5s to appear, but we check with a tiny timeout
-    await expect(page.locator('#finish h4')).toHaveText('Hello World!', { timeout: 1000 });
+    await expect(page.locator('#finish h4')).toHaveText('Hello World!', { timeout: 10000 });
   });
 });
