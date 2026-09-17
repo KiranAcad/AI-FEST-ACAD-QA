@@ -139,6 +139,11 @@ export function applyCodeFix(codeFix: CodeFixSuggestion): boolean {
     const normOrig = codeFix.originalCode.replace(/\r\n/g, '\n').trim();
     const normRepl = codeFix.replacementCode.replace(/\r\n/g, '\n').trim();
 
+    // If replacement is already applied on disk, treat as success
+    if (normRepl && normContent.includes(normRepl)) {
+      return true;
+    }
+
     if (normOrig && normContent.includes(normOrig)) {
       const updatedNorm = normContent.replace(normOrig, normRepl);
       const finalContent = isCRLF ? updatedNorm.replace(/\n/g, '\r\n') : updatedNorm;

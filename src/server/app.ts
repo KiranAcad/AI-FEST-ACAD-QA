@@ -9,7 +9,7 @@ import { parseTestResults } from '../parsers/index.js';
 import { analyzeBatch } from '../llm/batch-analyzer.js';
 import { generateMarkdownReport } from '../report/markdown-report.js';
 import { generateHtmlReport } from '../report/html-report.js';
-import { AnalysisReport } from '../types.js';
+import { AnalysisReport, CodeFixSuggestion } from '../types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -159,15 +159,91 @@ export function startDashboardServer(
     }
   });
 
+  // ─── Applied Fixes State & Persistence ──────────────────────────────
+  const APPLIED_FIXES_PATH = path.resolve(process.cwd(), 'output/applied-fixes.json');
+
+  interface AppliedFixRecord {
+    id: string;
+    testName: string;
+    testFile: string;
+    targetFile: string;
+    category: string;
+    codeFix: CodeFixSuggestion;
+    appliedAt: string;
+    verificationStatus: 'pending' | 'running' | 'passed' | 'failed';
+    lastVerifiedAt?: string;
+    verificationOutput?: string;
+  }
+
+  function getAppliedFixes(): AppliedFixRecord[] {
+    if (!fs.existsSync(APPLIED_FIXES_PATH)) return [];
+    try {
+      const raw = fs.readFileSync(APPLIED_FIXES_PATH, 'utf-8');
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+
+  function saveAppliedFixes(fixes: AppliedFixRecord[]): void {
+    try {
+      const dir = path.dirname(APPLIED_FIXES_PATH);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(APPLIED_FIXES_PATH, JSON.stringify(fixes, null, 2), 'utf-8');
+    } catch (err) {
+      console.error('Failed to save applied fixes:', err);
+    }
+  }
+
+  function recordAppliedFix(
+    codeFix: CodeFixSuggestion,
+    testName?: string,
+    testFile?: string,
+    category?: string
+  ): AppliedFixRecord {
+    const fixes = getAppliedFixes();
+    const normalizedTarget = path.normalize(codeFix.targetFile);
+    const relFile = testFile || path.relative(path.resolve(process.cwd(), 'real-tests'), normalizedTarget).replace(/\\/g, '/');
+    const tName = testName || path.basename(normalizedTarget);
+
+    const existingIdx = fixes.findIndex(f => f.targetFile === codeFix.targetFile && (!testName || f.testName === testName));
+
+    const record: AppliedFixRecord = {
+      id: existingIdx >= 0 ? fixes[existingIdx].id : `fix_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      testName: tName,
+      testFile: relFile,
+      targetFile: codeFix.targetFile,
+      category: category || 'Locator/Selector Issue',
+      codeFix,
+      appliedAt: new Date().toISOString(),
+      verificationStatus: 'pending',
+      lastVerifiedAt: undefined,
+      verificationOutput: undefined,
+    };
+
+    if (existingIdx >= 0) {
+      fixes[existingIdx] = record;
+    } else {
+      fixes.push(record);
+    }
+
+    saveAppliedFixes(fixes);
+    return record;
+  }
+
   // ─── API: Apply Code Fix ───────────────────────────────────────────
   app.post('/api/apply-fix', (req, res) => {
-    const { codeFix } = req.body;
+    const { codeFix, testName, testFile, category } = req.body;
     if (!codeFix) {
       return res.status(400).json({ success: false, error: 'codeFix payload required' });
     }
     try {
       const success = applyCodeFix(codeFix);
-      res.json({ success });
+      let record: AppliedFixRecord | null = null;
+      if (success) {
+        record = recordAppliedFix(codeFix, testName, testFile, category);
+      }
+      res.json({ success, record, fixedCount: getAppliedFixes().length });
     } catch (err) {
       res.status(500).json({ success: false, error: String(err) });
     }
@@ -189,12 +265,244 @@ export function startDashboardServer(
     }
 
     let appliedCount = 0;
+    const records: AppliedFixRecord[] = [];
     for (const a of currentReport.analyses) {
       if (a.codeFix && applyCodeFix(a.codeFix)) {
         appliedCount++;
+        const rec = recordAppliedFix(a.codeFix, a.testName, (a as any).testFile || a.codeFix.targetFile, a.category);
+        records.push(rec);
       }
     }
-    res.json({ success: true, appliedCount });
+    res.json({ success: true, appliedCount, fixedTests: getAppliedFixes() });
+  });
+
+  // ─── API: Get Fixed Tests ───────────────────────────────────────────
+  app.get('/api/fixed-tests', (_req, res) => {
+    res.json({ fixedTests: getAppliedFixes() });
+  });
+
+  // ─── API: Revert Specific or All Fixes ──────────────────────────────
+  app.post('/api/revert-fix', (req, res) => {
+    const { id } = req.body || {};
+    const fixes = getAppliedFixes();
+
+    if (id) {
+      const target = fixes.find(f => f.id === id);
+      if (!target) return res.status(404).json({ success: false, error: 'Fix not found' });
+
+      const bakFile = `${target.targetFile}.bak`;
+      if (fs.existsSync(bakFile)) {
+        try {
+          fs.copyFileSync(bakFile, target.targetFile);
+          fs.unlinkSync(bakFile);
+        } catch (err) {
+          console.error(`Failed to restore ${bakFile}:`, err);
+        }
+      }
+      const remaining = fixes.filter(f => f.id !== id);
+      saveAppliedFixes(remaining);
+      return res.json({ success: true, remainingCount: remaining.length });
+    } else {
+      for (const f of fixes) {
+        const bakFile = `${f.targetFile}.bak`;
+        if (fs.existsSync(bakFile)) {
+          try {
+            fs.copyFileSync(bakFile, f.targetFile);
+            fs.unlinkSync(bakFile);
+          } catch {}
+        }
+      }
+      saveAppliedFixes([]);
+      return res.json({ success: true, remainingCount: 0 });
+    }
+  });
+
+  // ─── API: Clear Fixed Tests List ────────────────────────────────────
+  app.post('/api/clear-fixed-tests', (_req, res) => {
+    saveAppliedFixes([]);
+    res.json({ success: true });
+  });
+
+  // ─── API: Verify Fixed Tests (Targeted Run) ─────────────────────────
+  app.post('/api/verify-fixed-tests', (req, res) => {
+    if (testRunning) {
+      return res.status(409).json({
+        success: false,
+        message: 'A test run or verification is already in progress.',
+        alreadyRunning: true,
+      });
+    }
+
+    const { ids, headed } = req.body || {};
+    const allFixes = getAppliedFixes();
+    const targetFixes = ids && Array.isArray(ids) && ids.length > 0
+      ? allFixes.filter(f => ids.includes(f.id))
+      : allFixes;
+
+    if (targetFixes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No fixed tests found to verify. Please apply a code fix first.',
+      });
+    }
+
+    // Mark target fixes as running
+    for (const f of targetFixes) {
+      f.verificationStatus = 'running';
+    }
+    saveAppliedFixes(allFixes);
+
+    // Collect distinct spec files relative to real-tests/
+    const realTestsDir = path.resolve(process.cwd(), 'real-tests');
+    const specFilesSet = new Set<string>();
+    const testTitles: string[] = [];
+
+    for (const f of targetFixes) {
+      const rel = path.relative(realTestsDir, f.targetFile).replace(/\\/g, '/');
+      specFilesSet.add(rel);
+
+      const parts = f.testName.split(' > ');
+      const title = parts[parts.length - 1].trim();
+      if (title) {
+        testTitles.push(title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      }
+    }
+
+    const specFiles = Array.from(specFilesSet);
+    const filterArg = testTitles.length > 0 ? `(${testTitles.join('|')})` : '';
+
+    const isWindows = process.platform === 'win32';
+    testOutputBuffer = [];
+    testExitCode = null;
+
+    const spawnEnv: Record<string, string> = { ...process.env } as Record<string, string>;
+    if (headed) {
+      spawnEnv['PLAYWRIGHT_HEADED'] = '1';
+    }
+
+    // Resolve playwright CLI inside real-tests
+    let playwrightCli = path.resolve(realTestsDir, 'node_modules/@playwright/test/cli.js');
+    const hasDirectCli = fs.existsSync(playwrightCli);
+
+    const spawnExecutable = hasDirectCli ? process.execPath : (isWindows ? 'npm.cmd' : 'npm');
+    const spawnCwd = hasDirectCli ? realTestsDir : process.cwd();
+    const spawnArgs: string[] = hasDirectCli
+      ? [playwrightCli, 'test', ...specFiles]
+      : ['--prefix', 'real-tests', 'test', '--', ...specFiles];
+
+    if (filterArg) {
+      spawnArgs.push('-g', filterArg);
+    }
+    if (headed && hasDirectCli) {
+      spawnArgs.push('--headed');
+    }
+
+    const modeLabel = headed ? '🖥️ Headed (Live UI Preview)' : '🔇 Headless';
+    broadcastSSEEvent('verify-status', {
+      running: true,
+      message: `🔄 Verifying ${targetFixes.length} fixed test(s) in ${modeLabel} mode...`,
+    });
+    broadcastSSE(`\n══════════════════════════════════════════════════════════════════════\n`);
+    broadcastSSE(`🔄 Starting Fix Verification for ${targetFixes.length} Fixed Test(s) [${modeLabel}]\n`);
+    broadcastSSE(`📁 Target Spec Files: ${specFiles.join(', ')}\n`);
+    if (filterArg) broadcastSSE(`🎯 Target Test Filter: ${filterArg}\n`);
+    broadcastSSE(`══════════════════════════════════════════════════════════════════════\n\n`);
+
+    try {
+      testProcess = spawn(spawnExecutable, spawnArgs, {
+        cwd: spawnCwd,
+        env: spawnEnv,
+        shell: !hasDirectCli,
+      });
+
+      testRunning = true;
+      let fullRunOutput = '';
+
+      testProcess.stdout?.on('data', (data: Buffer) => {
+        const text = data.toString();
+        testOutputBuffer.push(text);
+        fullRunOutput += text;
+        broadcastSSE(text);
+        broadcastSSEEvent('verify-log', { text });
+      });
+
+      testProcess.stderr?.on('data', (data: Buffer) => {
+        const text = data.toString();
+        testOutputBuffer.push(text);
+        fullRunOutput += text;
+        broadcastSSE(text);
+        broadcastSSEEvent('verify-log', { text });
+      });
+
+      testProcess.on('close', (code: number | null) => {
+        testRunning = false;
+        testExitCode = code;
+        testProcess = null;
+
+        const currentFixes = getAppliedFixes();
+        for (const target of targetFixes) {
+          const match = currentFixes.find(f => f.id === target.id);
+          if (match) {
+            match.lastVerifiedAt = new Date().toISOString();
+            match.verificationOutput = fullRunOutput;
+            if (code === 0) {
+              match.verificationStatus = 'passed';
+            } else {
+              const parts = match.testName.split(' > ');
+              const title = parts[parts.length - 1].trim();
+              const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const passedRegex = new RegExp(`ok\\s+\\d+\\s+.*${escapedTitle}`, 'i');
+              const failedRegex = new RegExp(`x\\s+\\d+\\s+.*${escapedTitle}`, 'i');
+              if (passedRegex.test(fullRunOutput) && !failedRegex.test(fullRunOutput)) {
+                match.verificationStatus = 'passed';
+              } else {
+                match.verificationStatus = 'failed';
+              }
+            }
+          }
+        }
+        saveAppliedFixes(currentFixes);
+
+        const passedCount = targetFixes.filter(f => {
+          const updated = currentFixes.find(c => c.id === f.id);
+          return updated?.verificationStatus === 'passed';
+        }).length;
+
+        const resultMsg = passedCount === targetFixes.length
+          ? `🎉 ALL ${passedCount} FIXED TEST(S) PASSED VERIFICATION!`
+          : `⚠️ ${passedCount}/${targetFixes.length} fixed tests passed.`;
+
+        broadcastSSE(`\n══════════════════════════════════════════════════════════════════════\n`);
+        broadcastSSE(`${resultMsg}\n`);
+        broadcastSSE(`══════════════════════════════════════════════════════════════════════\n\n`);
+
+        broadcastSSEEvent('verify-done', {
+          exitCode: code,
+          message: resultMsg,
+          passedCount,
+          totalCount: targetFixes.length,
+          fixedTests: currentFixes,
+        });
+      });
+
+      testProcess.on('error', (err: Error) => {
+        testRunning = false;
+        testProcess = null;
+        broadcastSSE(`\n❌ Failed to spawn verification process: ${err.message}\n`);
+        broadcastSSEEvent('verify-done', { exitCode: -1, message: err.message, fixedTests: getAppliedFixes() });
+      });
+
+      res.json({
+        success: true,
+        message: `Verification started for ${targetFixes.length} fixed test(s).`,
+        count: targetFixes.length,
+        specFiles,
+      });
+    } catch (err: any) {
+      testRunning = false;
+      testProcess = null;
+      res.status(500).json({ success: false, error: `Failed to spawn verification: ${err.message}` });
+    }
   });
 
   // ─── API: Serve Failure Screenshot ─────────────────────────────────

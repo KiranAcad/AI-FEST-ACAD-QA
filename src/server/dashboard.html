@@ -442,8 +442,19 @@
 
     /* Workflow steps */
     .workflow-steps {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; margin-bottom: 2rem;
     }
+    @media (max-width: 900px) {
+      .workflow-steps { grid-template-columns: repeat(2, 1fr); }
+    }
+    .verify-pill {
+      font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 9999px;
+      display: inline-flex; align-items: center; gap: 0.35rem;
+    }
+    .verify-pill-pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .verify-pill-running { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .verify-pill-passed { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45); }
+    .verify-pill-failed { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.45); }
     .workflow-step {
       background: rgba(6,8,13,0.5); border: 1px solid var(--border); border-radius: var(--radius);
       padding: 1.2rem; text-align: center; transition: var(--transition); cursor: pointer;
@@ -507,6 +518,10 @@
       <span class="nav-icon">🧪</span> Run Tests
       <span class="nav-badge nav-badge-green" id="navTestStatus" style="display:none;">●</span>
     </div>
+    <div class="nav-item" data-page="verify" onclick="showPage('verify')">
+      <span class="nav-icon">🔄</span> Verify Fixes
+      <span class="nav-badge" id="navFixedCount" style="display:none; background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4);">0</span>
+    </div>
     <div class="nav-item" data-page="run" onclick="showPage('run')">
       <span class="nav-icon">▶</span> Run Analysis
     </div>
@@ -568,12 +583,18 @@
           <div class="workflow-step" onclick="showPage('failures')">
             <div class="step-icon">🔧</div>
             <div class="step-title">3. Review & Fix</div>
-            <div class="step-desc">Apply self-healing patches</div>
+            <div class="step-desc">Apply code patches</div>
+            <span class="step-arrow">→</span>
+          </div>
+          <div class="workflow-step" onclick="showPage('verify')">
+            <div class="step-icon">🔄</div>
+            <div class="step-title">4. Verify Fixes</div>
+            <div class="step-desc">Targeted test validation</div>
             <span class="step-arrow">→</span>
           </div>
           <div class="workflow-step" onclick="showPage('reports')">
             <div class="step-icon">📑</div>
-            <div class="step-title">4. Reports</div>
+            <div class="step-title">5. Reports</div>
             <div class="step-desc">Export & share</div>
           </div>
         </div>
@@ -759,6 +780,84 @@ Tests output and status updates will stream here in real-time.</div>
         </div>
       </div>
 
+      <!-- ═══ Verify Fixed Tests Page ═══ -->
+      <div class="page" id="page-verify">
+        <div class="test-runner-panel" style="margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3 style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>🔄</span> Verify Fixed Tests
+                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-size: 0.75rem; border: 1px solid #10b981;">Targeted Validation</span>
+              </h3>
+              <p class="desc" style="max-width: 650px; margin-top: 0.25rem;">
+                Run Playwright targeting <strong>only the test cases that have had self-healing code fixes applied</strong>. Verify that your patches resolve failures without needing to re-run the entire test suite.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn btn-success" id="btnVerifyAll" onclick="triggerVerifyFixedTests()" style="display: flex; align-items: center; gap: 0.5rem;">
+                ⚡ Verify All Fixed Tests
+              </button>
+              <button class="btn btn-outline" id="btnVerifyHeaded" onclick="triggerVerifyFixedTests({ headed: true })" style="border-color: rgba(139, 92, 246, 0.5); color: #c4b5fd; display: flex; align-items: center; gap: 0.5rem;">
+                🖥️ Verify Headed (Watch UI)
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="revertAllFixes()" style="border-color: rgba(239, 68, 68, 0.4); color: #f87171;" title="Revert all applied fixes to original test code">
+                ↩ Revert Fixes
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="clearFixedList()" title="Clear verification list">
+                🧹 Clear List
+              </button>
+            </div>
+          </div>
+
+          <!-- Fixed Tests KPI Summary -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin: 1.25rem 0;">
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.8rem;">
+              <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Fixed Tests</div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: #fff;" id="fixedMetricTotal">0</div>
+            </div>
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.8rem; border-left: 3px solid var(--amber);">
+              <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Pending Verification</div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: #fbbf24;" id="fixedMetricPending">0</div>
+            </div>
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.8rem; border-left: 3px solid #10b981;">
+              <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Verified Passed</div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: #34d399;" id="fixedMetricPassed">0</div>
+            </div>
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.8rem; border-left: 3px solid #ef4444;">
+              <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Verification Failed</div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: #f87171;" id="fixedMetricFailed">0</div>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="progress-bar-container" id="verifyProgressBar">
+            <div class="progress-bar-fill progress-bar-indeterminate"></div>
+          </div>
+
+          <!-- Live Verification Console -->
+          <div style="margin-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;">
+                Verification Console Output
+              </span>
+              <span class="test-status-indicator test-status-idle" id="verifyStatusBadge">● Idle</span>
+            </div>
+            <div class="console-output visible" id="verifyConsole" style="min-height: 160px; max-height: 300px; overflow-y: auto;">Waiting to verify fixed tests...
+
+Click "⚡ Verify All Fixed Tests" or "▶ Verify This Test" below to run Playwright targeted exclusively at your patched code.</div>
+          </div>
+        </div>
+
+        <!-- Fixed Tests Cards Container -->
+        <div>
+          <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+            <span>Patched Test Cases (<span id="fixedCardsCount">0</span>)</span>
+            <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-dim);">Changes applied to disk</span>
+          </h4>
+          <div id="fixedTestsList"></div>
+        </div>
+      </div>
+
       <!-- ═══ Run Analysis Page ═══ -->
       <div class="page" id="page-run">
         <div class="run-panel">
@@ -906,12 +1005,14 @@ Tests output and status updates will stream here in real-time.</div>
         flaky: 'Flaky Test Analytics',
         run: 'Run Analysis',
         tests: 'Run Playwright Tests',
+        verify: 'Verify Fixed Tests',
         reports: 'Reports',
       };
       document.getElementById('pageTitle').textContent = titles[pageId] || 'Executive Dashboard';
       if (pageId === 'reports') loadReports();
       if (pageId === 'run') checkInputFileStatus();
       if (pageId === 'tests') loadTestVideos();
+      if (pageId === 'verify') loadFixedTests();
     }
 
     function showToast(msg, type = 'info') {
@@ -1194,23 +1295,33 @@ Tests output and status updates will stream here in real-time.</div>
     function applyFixByIndex(index) {
       const item = reportData?.analyses?.[index];
       if (item?.codeFix) {
-        applyFix(item.codeFix);
+        applyFix(item.codeFix, item.testName, (item.testFile || item.codeFix.targetFile), item.category);
       }
     }
 
-    async function applyFix(codeFix) {
+    async function applyFix(codeFix, testName, testFile, category) {
       try {
         const res = await fetch('/api/apply-fix', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ codeFix }),
+          body: JSON.stringify({ codeFix, testName, testFile, category }),
         });
         if (!res.ok) {
           throw new Error(`Server returned HTTP ${res.status}`);
         }
         const data = await res.json();
-        if (data.success) { showToast('⚡ Code fix applied directly to spec file on disk!', 'success'); return true; }
-        else { showToast('Failed to apply fix: ' + (data.error || 'Unknown error'), 'error'); return false; }
-      } catch (err) { showToast('Error: ' + err.message, 'error'); return false; }
+        if (data.success) {
+          showToast('⚡ Fix applied! Switching to 🔄 Verify Fixes to test your patch...', 'success');
+          loadFixedTests();
+          setTimeout(() => showPage('verify'), 800);
+          return true;
+        } else {
+          showToast('Failed to apply fix: ' + (data.error || 'Unknown error'), 'error');
+          return false;
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+        return false;
+      }
     }
 
     async function applyAllFixes() {
@@ -1230,7 +1341,6 @@ Tests output and status updates will stream here in real-time.</div>
         let appliedCount = 0;
         let success = false;
 
-        // Try bulk server endpoint first
         try {
           const res = await fetch('/api/apply-all-fixes', { method: 'POST' });
           if (res.ok) {
@@ -1240,19 +1350,20 @@ Tests output and status updates will stream here in real-time.</div>
               success = true;
             }
           }
-        } catch {
-          // Fall through to per-fix fallback below
-        }
+        } catch {}
 
-        // Resilient Fallback: If bulk endpoint returned 404 (e.g. server was not restarted yet),
-        // apply each code fix using the existing /api/apply-fix endpoint
         if (!success) {
           for (const a of fixableAnalyses) {
             try {
               const res = await fetch('/api/apply-fix', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ codeFix: a.codeFix }),
+                body: JSON.stringify({
+                  codeFix: a.codeFix,
+                  testName: a.testName,
+                  testFile: a.testFile || a.codeFix.targetFile,
+                  category: a.category,
+                }),
               });
               if (res.ok) {
                 const data = await res.json();
@@ -1264,7 +1375,9 @@ Tests output and status updates will stream here in real-time.</div>
         }
 
         if (success) {
-          showToast(`⚡ Successfully patched ${appliedCount} test spec file(s) on disk!`, 'success');
+          showToast(`⚡ Successfully patched ${appliedCount} test spec file(s)! Switching to 🔄 Verify Fixes...`, 'success');
+          loadFixedTests();
+          setTimeout(() => showPage('verify'), 1000);
         } else {
           showToast('Failed to apply fixes. Please restart the dashboard server.', 'error');
         }
@@ -1973,6 +2086,7 @@ _Generated by AI Failure Analysis Copilot_`;
       renderDashboard();
       renderFailures();
       renderFlaky();
+      loadFixedTests();
     })();
     // ══════════════════════════════════════════════════════════════════
     // ── Live Execution Video Replay ──
@@ -2057,6 +2171,266 @@ _Generated by AI Failure Analysis Copilot_`;
 
       // Scroll to player
       playerWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ── Verify Fixed Tests (Targeted Verification Runner) ──
+    // ══════════════════════════════════════════════════════════════════
+    let currentFixedTests = [];
+    let verifyEventSource = null;
+
+    async function loadFixedTests() {
+      try {
+        const res = await fetch('/api/fixed-tests');
+        const data = await res.json();
+        currentFixedTests = data.fixedTests || [];
+
+        const total = currentFixedTests.length;
+        const pending = currentFixedTests.filter(f => f.verificationStatus === 'pending' || !f.verificationStatus).length;
+        const passed = currentFixedTests.filter(f => f.verificationStatus === 'passed').length;
+        const failed = currentFixedTests.filter(f => f.verificationStatus === 'failed').length;
+
+        const elTotal = document.getElementById('fixedMetricTotal');
+        const elPending = document.getElementById('fixedMetricPending');
+        const elPassed = document.getElementById('fixedMetricPassed');
+        const elFailed = document.getElementById('fixedMetricFailed');
+        const elCardsCount = document.getElementById('fixedCardsCount');
+        const navBadge = document.getElementById('navFixedCount');
+
+        if (elTotal) elTotal.textContent = total;
+        if (elPending) elPending.textContent = pending;
+        if (elPassed) elPassed.textContent = passed;
+        if (elFailed) elFailed.textContent = failed;
+        if (elCardsCount) elCardsCount.textContent = total;
+
+        if (navBadge) {
+          if (total > 0) {
+            navBadge.style.display = 'inline-block';
+            navBadge.textContent = pending > 0 ? pending : '✓';
+            if (pending === 0 && passed > 0) {
+              navBadge.style.background = 'rgba(16, 185, 129, 0.25)';
+              navBadge.style.color = '#34d399';
+            } else {
+              navBadge.style.background = 'rgba(245, 158, 11, 0.2)';
+              navBadge.style.color = '#fbbf24';
+            }
+          } else {
+            navBadge.style.display = 'none';
+          }
+        }
+
+        renderFixedTestsList(currentFixedTests);
+      } catch (err) {
+        console.error('Failed to load fixed tests:', err);
+      }
+    }
+
+    function renderFixedTestsList(fixedTests) {
+      const container = document.getElementById('fixedTestsList');
+      if (!container) return;
+
+      if (!fixedTests || fixedTests.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 3.5rem 1.5rem; background: var(--bg-card); border: 1px dashed var(--border); border-radius: var(--radius-lg);">
+            <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🛠️</div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; color: #fff;">No Fixed Tests Awaiting Verification</h4>
+            <p style="color: var(--text-dim); max-width: 500px; margin: 0 auto 1.5rem auto; font-size: 0.88rem;">
+              When you apply AI self-healing code fixes in the <strong>Failure Triage</strong> tab, those test cases appear here so you can run targeted verification without running the entire suite.
+            </p>
+            <button class="btn btn-primary btn-sm" onclick="showPage('failures')">
+              🎯 Go to Failure Triage →
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = fixedTests.map((f, idx) => {
+        const statusMap = {
+          pending: '<span class="verify-pill verify-pill-pending">🟡 Pending Verification</span>',
+          running: '<span class="verify-pill verify-pill-running"><span class="spinner"></span> Verifying...</span>',
+          passed: '<span class="verify-pill verify-pill-passed">🟢 ✅ Verified Passed</span>',
+          failed: '<span class="verify-pill verify-pill-failed">🔴 ❌ Verification Failed</span>',
+        };
+        const statusBadge = statusMap[f.verificationStatus] || statusMap.pending;
+
+        const diffHtml = f.codeFix?.unifiedDiff ? `
+          <div style="margin-top: 0.75rem;">
+            <button class="btn btn-outline btn-sm" style="font-size: 0.72rem; padding: 2px 8px;" onclick="toggleFixedDiff('${f.id}')">
+              📄 Toggle Code Diff Preview
+            </button>
+            <div id="diff-${f.id}" style="display: none; margin-top: 0.5rem; background: #06080d; border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem; font-family: monospace; font-size: 0.72rem; overflow-x: auto; max-height: 200px;">
+              <pre style="margin: 0; color: #cbd5e1;">${escapeHtml(f.codeFix.unifiedDiff)}</pre>
+            </div>
+          </div>
+        ` : '';
+
+        const verifiedTime = f.lastVerifiedAt ? `<span style="font-size: 0.72rem; color: var(--text-dim);">Last checked: ${new Date(f.lastVerifiedAt).toLocaleTimeString()}</span>` : '';
+
+        return `
+          <div class="failure-card" style="margin-bottom: 1rem; border-left: 4px solid ${f.verificationStatus === 'passed' ? 'var(--green)' : f.verificationStatus === 'failed' ? 'var(--red)' : 'var(--amber)'};">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem;">
+                  ${statusBadge}
+                  <span class="tag tag-locator" style="font-size: 0.7rem;">${escapeHtml(f.category)}</span>
+                  ${verifiedTime}
+                </div>
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: #fff; margin: 0;">${escapeHtml(f.testName)}</h4>
+                <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem;">
+                  📁 <code>${escapeHtml(f.testFile || f.targetFile)}</code>
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button class="btn btn-success btn-sm" onclick="triggerVerifySingle('${f.id}', false)" style="font-size: 0.78rem;">
+                  ▶ Verify Test
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="triggerVerifySingle('${f.id}', true)" style="font-size: 0.78rem; border-color: rgba(139, 92, 246, 0.4); color: #c4b5fd;" title="Watch Chromium execute this test live">
+                  🖥️ Watch Headed
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="revertSingleFix('${f.id}')" style="font-size: 0.78rem; border-color: rgba(239, 68, 68, 0.3); color: #f87171;" title="Undo code patch and restore backup">
+                  ↩ Revert
+                </button>
+              </div>
+            </div>
+
+            ${diffHtml}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleFixedDiff(id) {
+      const el = document.getElementById(`diff-${id}`);
+      if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function triggerVerifyFixedTests(options = {}) {
+      const btnAll = document.getElementById('btnVerifyAll');
+      const btnHeaded = document.getElementById('btnVerifyHeaded');
+      const consoleEl = document.getElementById('verifyConsole');
+      const progBar = document.getElementById('verifyProgressBar');
+      const statusBadge = document.getElementById('verifyStatusBadge');
+
+      if (btnAll) btnAll.disabled = true;
+      if (btnHeaded) btnHeaded.disabled = true;
+      if (progBar) progBar.classList.add('visible');
+
+      if (statusBadge) {
+        statusBadge.className = 'test-status-indicator test-status-running';
+        statusBadge.textContent = '● Verifying...';
+      }
+
+      const modeMsg = options.headed ? '🖥️ HEADED (Live Browser Preview)' : '🔇 Headless';
+      consoleEl.textContent = `> 🔄 Starting targeted verification for fixed test cases in ${modeMsg} mode...\n> Target suite: Playwright (only patched test files)\n\n`;
+
+      // Connect SSE
+      if (verifyEventSource) verifyEventSource.close();
+      verifyEventSource = new EventSource('/api/run-tests/stream');
+
+      verifyEventSource.onmessage = (e) => {
+        try {
+          const text = JSON.parse(e.data);
+          consoleEl.textContent += text;
+          consoleEl.scrollTop = consoleEl.scrollHeight;
+        } catch {
+          consoleEl.textContent += e.data + '\n';
+        }
+      };
+
+      verifyEventSource.addEventListener('verify-done', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          const allPassed = data.passedCount === data.totalCount && data.totalCount > 0;
+          if (statusBadge) {
+            statusBadge.className = `test-status-indicator ${allPassed ? 'test-status-pass' : 'test-status-fail'}`;
+            statusBadge.textContent = allPassed ? `● Passed (${data.passedCount}/${data.totalCount})` : `● Failed (${data.passedCount}/${data.totalCount})`;
+          }
+          showToast(data.message || 'Verification complete', allPassed ? 'success' : 'warning');
+          loadFixedTests();
+        } catch {}
+        if (progBar) progBar.classList.remove('visible');
+        if (btnAll) btnAll.disabled = false;
+        if (btnHeaded) btnHeaded.disabled = false;
+        verifyEventSource?.close();
+        verifyEventSource = null;
+      });
+
+      try {
+        const res = await fetch('/api/verify-fixed-tests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: options.ids, headed: options.headed === true }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          showToast(data.error || 'Failed to start verification', 'error');
+          consoleEl.textContent += `\n❌ Error: ${data.error || 'Failed to start'}\n`;
+          if (progBar) progBar.classList.remove('visible');
+          if (btnAll) btnAll.disabled = false;
+          if (btnHeaded) btnHeaded.disabled = false;
+          if (statusBadge) {
+            statusBadge.className = 'test-status-indicator test-status-idle';
+            statusBadge.textContent = '● Idle';
+          }
+        }
+      } catch (err) {
+        showToast('Network error: ' + err.message, 'error');
+        if (progBar) progBar.classList.remove('visible');
+        if (btnAll) btnAll.disabled = false;
+        if (btnHeaded) btnHeaded.disabled = false;
+      }
+    }
+
+    async function triggerVerifySingle(fixId, headed = false) {
+      await triggerVerifyFixedTests({ ids: [fixId], headed });
+    }
+
+    async function revertSingleFix(fixId) {
+      if (!confirm('Revert this code patch and restore the original test file from backup?')) return;
+      try {
+        const res = await fetch('/api/revert-fix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: fixId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('↩ Code patch reverted to original version', 'info');
+          loadFixedTests();
+        } else {
+          showToast('Failed to revert: ' + data.error, 'error');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function revertAllFixes() {
+      if (!confirm('Revert ALL applied code patches and restore original test files?')) return;
+      try {
+        const res = await fetch('/api/revert-fix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('↩ All code patches reverted to original versions', 'info');
+          loadFixedTests();
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function clearFixedList() {
+      if (!confirm('Clear the fixed tests verification list? (Does not revert files on disk)')) return;
+      try {
+        await fetch('/api/clear-fixed-tests', { method: 'POST' });
+        loadFixedTests();
+        showToast('Verification list cleared', 'info');
+      } catch {}
     }
 
   </script>
