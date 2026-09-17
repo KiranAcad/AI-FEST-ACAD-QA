@@ -352,7 +352,7 @@ export function startDashboardServer(
   });
 
   // ─── API: Run Playwright Tests ─────────────────────────────────────
-  app.post('/api/run-tests', (_req, res) => {
+  app.post('/api/run-tests', (req, res) => {
     if (testRunning) {
       // If tests are already running, attach gracefully instead of returning 409 error
       return res.json({
@@ -364,20 +364,33 @@ export function startDashboardServer(
 
     const isWindows = process.platform === 'win32';
     const npmCmd = isWindows ? 'npm.cmd' : 'npm';
+    const headed = req.body?.headed === true;
 
     try {
       testOutputBuffer = [];
       testExitCode = null;
 
+      // Build environment with optional headed mode
+      const spawnEnv: Record<string, string> = { ...process.env } as Record<string, string>;
+      if (headed) {
+        spawnEnv['PLAYWRIGHT_HEADED'] = '1';
+      }
+
       testProcess = spawn(npmCmd, ['run', 'test:real'], {
         cwd: process.cwd(),
-        env: { ...process.env },
+        env: spawnEnv,
         shell: true,
       });
 
       testRunning = true;
 
-      broadcastSSEEvent('status', { running: true, message: '🚀 Playwright tests starting...' });
+      const modeLabel = headed ? '🖥️ Headed (Live Browser Preview)' : '🔇 Headless';
+      broadcastSSEEvent('status', { running: true, message: `🚀 Playwright tests starting in ${modeLabel} mode...` });
+      broadcastSSE(`\n🚀 Starting Playwright tests in ${modeLabel} mode...\n`);
+      if (headed) {
+        broadcastSSE('💡 A Chromium browser window will open on your screen — watch the tests execute live!\n');
+      }
+      broadcastSSE('📹 Video recordings enabled — replays will be available after tests complete.\n\n');
 
       testProcess.stdout?.on('data', (data: Buffer) => {
         const text = data.toString();
@@ -399,7 +412,8 @@ export function startDashboardServer(
           ? '✅ All tests passed!'
           : `❌ Tests completed with exit code ${code}. Some tests may have failed.`;
         broadcastSSE(`\n${msg}\n`);
-        broadcastSSEEvent('done', { exitCode: code, message: msg });
+        broadcastSSE('📹 Test execution videos are now available in the Live Execution Replay panel.\n');
+        broadcastSSEEvent('done', { exitCode: code, message: msg, videosReady: true });
       });
 
       testProcess.on('error', (err: Error) => {
@@ -409,13 +423,70 @@ export function startDashboardServer(
         broadcastSSEEvent('done', { exitCode: -1, message: err.message });
       });
 
-      res.json({ success: true, message: 'Test run started.' });
+      res.json({ success: true, message: `Test run started in ${modeLabel} mode.`, headed });
     } catch (err: any) {
       testRunning = false;
       testProcess = null;
       console.error('Failed to spawn test process:', err);
       res.status(500).json({ success: false, error: `Failed to spawn test runner: ${err.message}` });
     }
+  });
+
+  // ─── API: List Recorded Test Videos ──────────────────────────────────
+  app.get('/api/test-videos', (_req, res) => {
+    const testResultsDir = path.resolve(process.cwd(), 'real-tests/test-results');
+    if (!fs.existsSync(testResultsDir)) {
+      return res.json({ videos: [] });
+    }
+
+    try {
+      const videos: Array<{ name: string; path: string; size: number; test: string }> = [];
+
+      // Recursively find all .webm video files in test-results
+      function findVideos(dir: string) {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          const fullPath = path.join(dir, entry.name);
+          if (entry.isDirectory()) {
+            findVideos(fullPath);
+          } else if (entry.name.endsWith('.webm')) {
+            const stat = fs.statSync(fullPath);
+            const relPath = path.relative(testResultsDir, fullPath).replace(/\\/g, '/');
+            // Extract test name from parent directory name
+            const parentDir = path.basename(path.dirname(fullPath));
+            const testName = parentDir
+              .replace(/-chromium$/, '')
+              .replace(/-retry\d+$/, '')
+              .replace(/-/g, ' ')
+              .replace(/\b\w/g, c => c.toUpperCase());
+            videos.push({
+              name: entry.name,
+              path: relPath,
+              size: stat.size,
+              test: testName,
+            });
+          }
+        }
+      }
+
+      findVideos(testResultsDir);
+      res.json({ videos });
+    } catch (err) {
+      res.status(500).json({ videos: [], error: String(err) });
+    }
+  });
+
+  // ─── API: Serve Recorded Test Videos ────────────────────────────────
+  const testResultsStaticDir = path.resolve(process.cwd(), 'real-tests/test-results');
+  app.use('/api/test-videos/file', express.static(testResultsStaticDir));
+
+  app.get('/api/test-video-stream', (req, res) => {
+    const rel = typeof req.query.path === 'string' ? req.query.path : '';
+    const full = path.resolve(testResultsStaticDir, rel);
+    if (!full.startsWith(testResultsStaticDir) || !fs.existsSync(full)) {
+      return res.status(404).json({ error: 'Video not found' });
+    }
+    res.sendFile(full);
   });
 
   // ─── API: SSE Stream for Test Output ────────────────────────────────

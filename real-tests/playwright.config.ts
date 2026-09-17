@@ -9,10 +9,11 @@ export default defineConfig({
     ['list'],
   ],
   use: {
-    headless: true,
+    headless: !process.env.PLAYWRIGHT_HEADED,
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: 'on',
     trace: 'off',
+    viewport: { width: 1280, height: 720 },
   },
   projects: [
     {
